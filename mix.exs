@@ -1,4 +1,4 @@
-defmodule Vfs.MixProject do
+defmodule VFS.MixProject do
   use Mix.Project
 
   def project do

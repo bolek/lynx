@@ -1,8 +1,8 @@
-defmodule VfsTest do
+defmodule VFSTest do
   use ExUnit.Case
-  doctest Vfs
+  doctest VFS
 
   test "greets the world" do
-    assert Vfs.hello() == :world
+    assert VFS.hello() == :world
   end
 end

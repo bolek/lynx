@@ -1,6 +1,6 @@
-defmodule Vfs do
+defmodule VFS do
   @moduledoc """
-  Documentation for `Vfs`.
+  Documentation for `VFS`.
   """
 
   @doc """
@@ -8,7 +8,7 @@ defmodule Vfs do
 
   ## Examples
 
-      iex> Vfs.hello()
+      iex> VFS.hello()
       :world
 
   """
