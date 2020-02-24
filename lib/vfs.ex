@@ -7,6 +7,9 @@ defmodule VFS do
   @type scheme :: binary | atom
   @type uri :: String.t() | URI.t() | {scheme, any}
 
+  defmacro adapter(module) do
+    quote do: use(unquote(module))
+  end
 
   @spec get(uri, [VFS.Adapter.t()]) :: {:ok, VFS.stream()} | {:error, any}
   def get(uri, adapters) do
@@ -43,5 +46,14 @@ defmodule VFS do
     adapters
     |> Enum.find(nil, fn adapter -> adapter.scheme == scheme end)
   end
+
+  defmacro __using__(_env) do
+    quote do
+      import VFS, only: [adapter: 1]
+
+      def fetch_adapter!(uri), do: VFS.fetch_adapter!(uri, adapters())
+      def get(uri), do: VFS.get(uri, adapters())
+      def put(from_uri, to_uri), do: VFS.put(from_uri, to_uri, adapters())
+    end
   end
 end

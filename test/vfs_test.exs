@@ -29,5 +29,19 @@ defmodule VFSTest do
       end
     end
   end
+
+  describe "using" do
+    defmodule MyVFS do
+      use VFS
+
+      adapter(VFSTestAdapter)
+    end
+
+    test "adapters" do
+      assert MyVFS.adapters() == [
+               %VFS.Adapter{module: VFSTestAdapter, scheme: "test"}
+             ]
+    end
+  end
   end
 end
