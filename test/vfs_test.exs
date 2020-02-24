@@ -43,5 +43,20 @@ defmodule VFSTest do
              ]
     end
   end
+
+  describe "between two resources using different adapters" do
+    @adapters [
+      VFS.Adapter.new("test", VFSTestAdapter),
+      VFS.Adapter.new("file", VFS.Adapters.LocalFileSystem)
+    ]
+
+    test "happy path" do
+      assert VFS.put(
+               "file://" <> Path.expand("./test/data/a.txt"),
+               {"test", []},
+               @adapters
+             ) ==
+               {:ok, {"test", ["foo"]}}
+    end
   end
 end
