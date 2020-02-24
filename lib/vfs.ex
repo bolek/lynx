@@ -3,8 +3,9 @@ defmodule VFS do
   Documentation for `VFS`.
   """
 
-  @doc """
-  Hello world.
+  @type stream :: Enumerable.t() | File.Stream.t() | IO.Stream.t()
+  @type scheme :: binary | atom
+  @type uri :: String.t() | URI.t() | {scheme, any}
 
   ## Examples
 
