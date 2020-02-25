@@ -33,11 +33,9 @@ defmodule VFSTest do
     end
 
     test "inexistent adapter" do
-      assert_raise VFS.Adapter.NotFoundError,
-                   "could not find an adapter implemntation for scheme: dummy in dummy://lala",
-                   fn ->
-                     VFS.put!("dummy://lala", "baba://location", @adapters)
-                   end
+      assert_raise VFS.Adapter.NotFoundError, fn ->
+        VFS.put!("dummy://lala", "baba://location", @adapters)
+      end
     end
   end
 
@@ -117,20 +115,28 @@ defmodule VFSTest do
     defmodule DummyAdapter do
       use VFS.Adapter, :test
 
-      def get(_), do: raise("not implemented")
-      def put(_, _), do: raise("not implemented")
+      def get(_), do: {:ok, []}
+      def put(_, to_uri), do: {:ok, to_uri}
     end
 
     defmodule MyVFS do
-      use VFS
+      use VFS, :test
 
       adapter(DummyAdapter)
     end
 
-    test "adapters" do
+    test "adapters/0" do
       assert MyVFS.adapters() == [
                %VFS.Adapter.Registry.Entry{module: DummyAdapter, scheme: "test"}
              ]
+    end
+
+    test "get/1" do
+      assert MyVFS.get("test://location") == {:ok, []}
+    end
+
+    test "put/1" do
+      assert MyVFS.put("test://location_1", "test://location_2") == {:ok, "test://location_2"}
     end
   end
 end

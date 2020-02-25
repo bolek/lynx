@@ -3,6 +3,6 @@ defmodule VFS.Adapter.NotFoundError do
 
   @impl true
   def message(%{scheme: scheme, uri: uri}) do
-    "could not find an adapter implemntation for scheme: #{scheme} in #{uri}"
+    "could not find an adapter implementation for scheme \"#{scheme}\" in \"#{uri}\""
   end
 end
