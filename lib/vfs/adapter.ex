@@ -1,7 +1,5 @@
 defmodule VFS.Adapter do
-  defstruct [:scheme, :module]
-
-  @type t :: %VFS.Adapter{scheme: String.t(), module: module}
+  alias __MODULE__
 
   @callback get(VFS.uri()) :: {:ok, VFS.stream()} | {:error, any}
   @callback put(VFS.uri(), VFS.uri()) :: {:ok, VFS.uri()} | {:error, any}
@@ -18,14 +16,11 @@ defmodule VFS.Adapter do
 
       defmacro __using__(_) do
         quote location: :keep, bind_quoted: [module: unquote(module), scheme: unquote(scheme)] do
-          use AdapterRegistry, VFS.Adapter.new(scheme, module)
+          use Adapter.Registry, Adapter.build_entry(scheme, module)
         end
       end
     end
   end
 
-  @spec new(atom | String.t(), module) :: VFS.Adapter.t()
-  def new(scheme, module) do
-    %VFS.Adapter{scheme: "#{scheme}", module: module}
-  end
+  defdelegate build_entry(scheme, module), to: Adapter.Registry.Entry, as: :new
 end

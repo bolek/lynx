@@ -1,10 +1,10 @@
 defmodule VFS.AdapterTest do
   use ExUnit.Case, async: true
 
-  test "new/2" do
-    assert VFS.Adapter.new("test", :dummy_module) == %VFS.Adapter{
+  test "build_entry/2" do
+    assert VFS.Adapter.build_entry("test", MyTestAdapter) == %VFS.Adapter.Registry.Entry{
              scheme: "test",
-             module: :dummy_module
+             module: MyTestAdapter
            }
   end
 

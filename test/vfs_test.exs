@@ -3,7 +3,7 @@ defmodule VFSTest do
   doctest VFS
 
   describe "get/2" do
-    @adapters [VFS.Adapter.new("test", VFSTestAdapter)]
+    @adapters [VFS.Adapter.build_entry("test", VFSTestAdapter)]
 
     test "happy path" do
       {:ok, _} = VFS.get({"test", [1, 2, 3]}, @adapters)
@@ -17,7 +17,7 @@ defmodule VFSTest do
   end
 
   describe "put/2" do
-    @adapters [VFS.Adapter.new("test", VFSTestAdapter)]
+    @adapters [VFS.Adapter.build_entry("test", VFSTestAdapter)]
 
     test "happy path" do
       assert VFS.put({"test", [1, 2, 3]}, {"test", []}, @adapters) == {:ok, {"test", [1, 2, 3]}}
@@ -39,15 +39,15 @@ defmodule VFSTest do
 
     test "adapters" do
       assert MyVFS.adapters() == [
-               %VFS.Adapter{module: VFSTestAdapter, scheme: "test"}
+               %VFS.Adapter.Registry.Entry{module: VFSTestAdapter, scheme: "test"}
              ]
     end
   end
 
   describe "between two resources using different adapters" do
     @adapters [
-      VFS.Adapter.new("test", VFSTestAdapter),
-      VFS.Adapter.new("file", VFS.Adapters.LocalFileSystem)
+      VFS.Adapter.build_entry("test", VFSTestAdapter),
+      VFS.Adapter.build_entry("file", VFS.Adapters.LocalFileSystem)
     ]
 
     test "happy path" do
