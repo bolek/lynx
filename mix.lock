@@ -1,0 +1,5 @@
+%{
+  "hammox": {:hex, :hammox, "0.2.2", "49b3ddd56b7aeb5aadfbfaced9d66d5bbec36daeed066b5c6af0871ae9a31266", [:mix], [{:mox, "~> 0.5", [hex: :mox, repo: "hexpm", optional: false]}, {:ordinal, "~> 0.1.0", [hex: :ordinal, repo: "hexpm", optional: false]}], "hexpm"},
+  "mox": {:hex, :mox, "0.5.2", "55a0a5ba9ccc671518d068c8dddd20eeb436909ea79d1799e2209df7eaa98b6c", [:mix], [], "hexpm"},
+  "ordinal": {:hex, :ordinal, "0.1.0", "2f7a1a64ff4be44b8a674718bb00d1584188fe92fa2fa48b95b1e72096d74a34", [:mix], [], "hexpm"},
+}
