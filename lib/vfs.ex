@@ -28,20 +28,17 @@ defmodule VFS do
     end
   end
 
-  @spec put(uri, uri, [VFS.Adapter.t()]) ::
-          {:ok, uri}
-          | {:error, {module, keyword}}
-  def put(from_uri, to_uri, adapters) do
-    with {:ok, stream} <- get(from_uri, adapters),
-         {:ok, adapter} <- fetch_adapter(to_uri, adapters) do
-      VFS.Adapter.put(adapter, stream, to_uri)
+  @spec write(uri, stream, keyword, [VFS.Adapter.t()]) :: :ok | {:error, {module, keyword}}
+  def write(uri, stream, options, adapters) do
+    with {:ok, adapter} <- fetch_adapter(uri, adapters) do
+      VFS.Adapter.write(adapter, uri, stream, options)
     end
   end
 
-  @spec put!(uri, uri, [VFS.Adapter.t()]) :: uri
-  def put!(from_uri, to_uri, adapters) do
-    case put(from_uri, to_uri, adapters) do
-      {:ok, to_uri} -> to_uri
+  @spec write!(uri, stream, keyword, [VFS.Adapter.t()]) :: :ok | {:error, {module, keyword}}
+  def write!(uri, stream, options, adapters) do
+    case write(uri, stream, options, adapters) do
+      :ok -> :ok
       {:error, {module, args}} -> raise module, args
     end
   end
@@ -68,7 +65,7 @@ defmodule VFS do
 
       def fetch_adapter(uri), do: VFS.fetch_adapter(uri, adapters())
       def get(uri), do: VFS.get(uri, adapters())
-      def put(from_uri, to_uri), do: VFS.put(from_uri, to_uri, adapters())
+      def write(uri, stream, options \\ []), do: VFS.write(uri, stream, options, adapters())
     end
   end
 end

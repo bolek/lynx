@@ -5,7 +5,7 @@ defmodule VFS.AdapterTest do
     use VFS.Adapter, "test"
 
     def get(_), do: {:ok, []}
-    def put(_, _), do: {:ok, "test://to_location"}
+    def write(_, _, _), do: :ok
   end
 
   describe "using" do
@@ -18,9 +18,8 @@ defmodule VFS.AdapterTest do
     assert VFS.Adapter.get(MyTestAdapter, "test://location") == {:ok, []}
   end
 
-  test "put/3" do
-    assert VFS.Adapter.put(MyTestAdapter, [], "test://to_location") ==
-             {:ok, "test://to_location"}
+  test "write/3" do
+    assert VFS.Adapter.write(MyTestAdapter, "test://to_location", []) == :ok
   end
 
   test "build_entry/2" do
@@ -31,7 +30,7 @@ defmodule VFS.AdapterTest do
   end
 
   setup_all do
-    Hammox.protect(ConcreteAdapter, VFS.Adapter, get: 1, put: 2)
+    Hammox.protect(ConcreteAdapter, VFS.Adapter, get: 1, write: 3)
   end
 
   describe "behaviour" do
@@ -43,12 +42,12 @@ defmodule VFS.AdapterTest do
       assert {:ok, []} == get_1.("scheme://location")
     end
 
-    test "pull/2", %{put_2: put_2} do
-      Hammox.expect(ConcreteAdapter, :put, fn [], "scheme://location_2" ->
-        {:ok, "scheme://location_2"}
+    test "write/3", %{write_3: write_3} do
+      Hammox.expect(ConcreteAdapter, :write, fn "scheme://location_2", [], [] ->
+        :ok
       end)
 
-      assert {:ok, "scheme://location_2"} == put_2.([], "scheme://location_2")
+      assert write_3.("scheme://location_2", [], []) == :ok
     end
   end
 end

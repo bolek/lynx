@@ -3,7 +3,7 @@ defmodule VFSTest do
   doctest VFS
 
   setup_all do
-    Hammox.protect(ConcreteAdapter, VFS.Adapter, get: 1, put: 2)
+    Hammox.protect(ConcreteAdapter, VFS.Adapter, get: 1, write: 3)
   end
 
   @adapters [VFS.Adapter.build_entry("test", ConcreteAdapter)]
@@ -34,79 +34,53 @@ defmodule VFSTest do
 
     test "inexistent adapter" do
       assert_raise VFS.Adapter.NotFoundError, fn ->
-        VFS.put!("dummy://lala", "baba://location", @adapters)
+        VFS.write!("dummy://lala", [], [], @adapters)
       end
     end
   end
 
-  describe "put/2" do
+  describe "write/4" do
     test "happy path" do
-      Hammox.expect(ConcreteAdapter, :put, fn [], "test://location_2" ->
-        {:ok, "test://location_2"}
+      Hammox.expect(ConcreteAdapter, :write, fn "test://location", _, _ ->
+        :ok
       end)
 
-      Hammox.expect(ConcreteAdapter, :get, fn "test://location_1" ->
-        {:ok, []}
-      end)
-
-      assert VFS.put("test://location_1", "test://location_2", @adapters) ==
-               {:ok, "test://location_2"}
+      assert VFS.write("test://location", [], [], @adapters) == :ok
     end
 
     test "inexistent adapter" do
-      from_uri = "dummy://location"
-      to_uri = "test://location"
+      uri = "dummy://location"
 
       assert {:error, {VFS.Adapter.NotFoundError, scheme: "dummy", uri: "dummy://location"}} ==
-               VFS.put(from_uri, to_uri, @adapters)
+               VFS.write(uri, [], [], @adapters)
     end
   end
 
-  describe "put!/2" do
+  describe "write!/4" do
     test "happy path" do
-      Hammox.expect(ConcreteAdapter, :get, fn "test://location_1" ->
-        {:ok, []}
+      Hammox.expect(ConcreteAdapter, :write, fn "test://location_1", [], [] ->
+        :ok
       end)
 
-      Hammox.expect(ConcreteAdapter, :put, fn [], "test://location_2" ->
-        {:ok, "test://location_2"}
-      end)
-
-      assert VFS.put!("test://location_1", "test://location_2", @adapters) ==
-               "test://location_2"
+      assert VFS.write!("test://location_1", [], [], @adapters) == :ok
     end
 
     test "unhappy path" do
-      Hammox.expect(ConcreteAdapter, :get, fn "test://location_1" ->
+      Hammox.expect(ConcreteAdapter, :write, fn "test://location_1", _, _ ->
         {:error, {RuntimeError, message: "broken connection"}}
       end)
 
       assert_raise RuntimeError, "broken connection", fn ->
-        VFS.put!("test://location_1", "test://location_2", @adapters)
+        VFS.write!("test://location_1", [], [], @adapters)
       end
     end
 
-    test "inexistent adapter for from_uri" do
-      from_uri = "dummy://location"
-      to_uri = "test://location"
+    test "inexistent adapter for uri" do
+      uri = "dummy://location"
 
       assert_raise VFS.Adapter.NotFoundError,
                    fn ->
-                     VFS.put!(from_uri, to_uri, @adapters)
-                   end
-    end
-
-    test "inexistent adapter for to_uri" do
-      from_uri = "test://location"
-      to_uri = "dummy://location"
-
-      Hammox.expect(ConcreteAdapter, :get, fn "test://location" ->
-        {:ok, []}
-      end)
-
-      assert_raise VFS.Adapter.NotFoundError,
-                   fn ->
-                     VFS.put!(from_uri, to_uri, @adapters)
+                     VFS.write!(uri, [], [], @adapters)
                    end
     end
   end
@@ -116,7 +90,7 @@ defmodule VFSTest do
       use VFS.Adapter, :test
 
       def get(_), do: {:ok, []}
-      def put(_, to_uri), do: {:ok, to_uri}
+      def write(_, _, _), do: :ok
     end
 
     defmodule MyVFS do
@@ -135,8 +109,8 @@ defmodule VFSTest do
       assert MyVFS.get("test://location") == {:ok, []}
     end
 
-    test "put/1" do
-      assert MyVFS.put("test://location_1", "test://location_2") == {:ok, "test://location_2"}
+    test "write/3" do
+      assert MyVFS.write("test://location_1", [], []) == :ok
     end
   end
 end
