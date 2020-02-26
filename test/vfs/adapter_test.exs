@@ -4,8 +4,8 @@ defmodule VFS.AdapterTest do
   defmodule MyTestAdapter do
     use VFS.Adapter, "test"
 
-    def get(_), do: {:ok, []}
-    def write(_, _, _), do: :ok
+    def read(_, _options \\ []), do: {:ok, []}
+    def write(_, _, _options \\ []), do: :ok
   end
 
   describe "using" do
@@ -14,8 +14,8 @@ defmodule VFS.AdapterTest do
     end
   end
 
-  test "get/2" do
-    assert VFS.Adapter.get(MyTestAdapter, "test://location") == {:ok, []}
+  test "read/3" do
+    assert VFS.Adapter.read(MyTestAdapter, "test://location") == {:ok, []}
   end
 
   test "write/3" do
@@ -30,16 +30,16 @@ defmodule VFS.AdapterTest do
   end
 
   setup_all do
-    Hammox.protect(ConcreteAdapter, VFS.Adapter, get: 1, write: 3)
+    Hammox.protect(ConcreteAdapter, VFS.Adapter, read: 2, write: 3)
   end
 
   describe "behaviour" do
-    test "get/1", %{get_1: get_1} do
-      Hammox.expect(ConcreteAdapter, :get, fn "scheme://location" ->
+    test "read/2", %{read_2: read_2} do
+      Hammox.expect(ConcreteAdapter, :read, fn "scheme://location", [] ->
         {:ok, []}
       end)
 
-      assert {:ok, []} == get_1.("scheme://location")
+      assert {:ok, []} == read_2.("scheme://location", [])
     end
 
     test "write/3", %{write_3: write_3} do

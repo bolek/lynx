@@ -3,33 +3,33 @@ defmodule VFSTest do
   doctest VFS
 
   setup_all do
-    Hammox.protect(ConcreteAdapter, VFS.Adapter, get: 1, write: 3)
+    Hammox.protect(ConcreteAdapter, VFS.Adapter, read: 2, write: 3)
   end
 
   @adapters [VFS.Adapter.build_entry("test", ConcreteAdapter)]
 
-  describe "get/2" do
+  describe "read/2" do
     test "happy path" do
-      Hammox.expect(ConcreteAdapter, :get, fn "test://location" ->
+      Hammox.expect(ConcreteAdapter, :read, fn "test://location", [] ->
         {:ok, []}
       end)
 
-      assert {:ok, []} = VFS.get("test://location", @adapters)
+      assert {:ok, []} = VFS.read("test://location", [], @adapters)
     end
 
     test "inexistent adapter" do
       assert {:error, {VFS.Adapter.NotFoundError, [scheme: "dummy", uri: "dummy://location"]}} ==
-               VFS.get("dummy://location", @adapters)
+               VFS.read("dummy://location", [], @adapters)
     end
   end
 
-  describe "get!/2" do
+  describe "read!/2" do
     test "happy path" do
-      Hammox.expect(ConcreteAdapter, :get, fn "test://location" ->
+      Hammox.expect(ConcreteAdapter, :read, fn "test://location", [] ->
         {:ok, []}
       end)
 
-      assert [] = VFS.get!("test://location", @adapters)
+      assert [] = VFS.read!("test://location", [], @adapters)
     end
 
     test "inexistent adapter" do
@@ -89,7 +89,7 @@ defmodule VFSTest do
     defmodule DummyAdapter do
       use VFS.Adapter, :test
 
-      def get(_), do: {:ok, []}
+      def read(_, _), do: {:ok, []}
       def write(_, _, _), do: :ok
     end
 
@@ -105,8 +105,8 @@ defmodule VFSTest do
              ]
     end
 
-    test "get/1" do
-      assert MyVFS.get("test://location") == {:ok, []}
+    test "read/2" do
+      assert MyVFS.read("test://location", []) == {:ok, []}
     end
 
     test "write/3" do

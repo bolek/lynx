@@ -11,18 +11,18 @@ defmodule VFS do
     quote do: use(unquote(module))
   end
 
-  @spec get(uri, [VFS.Adapter.t()]) ::
+  @spec read(uri, keyword, [VFS.Adapter.t()]) ::
           {:ok, VFS.stream()} | {:error, {module, keyword}}
-  def get(uri, adapters) do
+  def read(uri, options, adapters) do
     with {:ok, adapter} <- fetch_adapter(uri, adapters),
-         {:ok, result} <- VFS.Adapter.get(adapter, uri) do
+         {:ok, result} <- VFS.Adapter.read(adapter, uri, options) do
       {:ok, result}
     end
   end
 
-  @spec get!(uri, [VFS.Adapter.t()]) :: VFS.stream()
-  def get!(uri, adapters) do
-    case get(uri, adapters) do
+  @spec read!(uri, keyword, [VFS.Adapter.t()]) :: VFS.stream()
+  def read!(uri, options, adapters) do
+    case read(uri, options, adapters) do
       {:ok, stream} -> stream
       {:error, {module, args}} -> raise module, args
     end
@@ -64,7 +64,7 @@ defmodule VFS do
       import VFS, only: [adapter: 1]
 
       def fetch_adapter(uri), do: VFS.fetch_adapter(uri, adapters())
-      def get(uri), do: VFS.get(uri, adapters())
+      def read(uri, options \\ []), do: VFS.read(uri, options, adapters())
       def write(uri, stream, options \\ []), do: VFS.write(uri, stream, options, adapters())
     end
   end

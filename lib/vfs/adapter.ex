@@ -1,7 +1,7 @@
 defmodule VFS.Adapter do
   alias __MODULE__
 
-  @callback get(VFS.uri()) :: {:ok, VFS.stream()} | {:error, {module, keyword}}
+  @callback read(VFS.uri(), keyword) :: {:ok, VFS.stream()} | {:error, {module, keyword}}
   @callback write(VFS.uri(), VFS.stream(), keyword) :: :ok | {:error, {module, keyword}}
 
   defmacro __using__(scheme) do
@@ -22,8 +22,8 @@ defmodule VFS.Adapter do
     end
   end
 
-  @spec get(module, VFS.uri()) :: {:ok, VFS.stream()}
-  def get(adapter, uri), do: adapter.get(uri)
+  @spec read(module, VFS.uri(), keyword) :: {:ok, VFS.stream()}
+  def read(adapter, uri, options \\ []), do: adapter.read(uri, options)
 
   @spec write(module, VFS.uri(), VFS.stream(), keyword) :: :ok | {:error, {module, keyword}}
   def write(adapter, uri, stream, options \\ []), do: adapter.write(uri, stream, options)
