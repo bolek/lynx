@@ -1,8 +1,8 @@
 defmodule Lynx.Adapter.NotFoundError do
-  defexception [:scheme, :uri]
+  defexception [:uri]
 
   @impl true
-  def message(%{scheme: scheme, uri: uri}) do
-    "could not find an adapter implementation for scheme \"#{scheme}\" in \"#{uri}\""
+  def message(%{uri: uri}) do
+    "could not find an adapter implementation for scheme \"#{uri.scheme}\" in \"#{uri}\""
   end
 end

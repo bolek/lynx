@@ -13,6 +13,10 @@ defmodule Lynx do
 
   @spec read(uri, keyword, [Lynx.Adapter.t()]) ::
           {:ok, Lynx.stream()} | {:error, {module, keyword}}
+  def read(uri, options, adapter) when is_binary(uri) do
+    read(URI.parse(uri), options, adapter)
+  end
+
   def read(uri, options, adapters) do
     with {:ok, adapter} <- fetch_adapter(uri, adapters),
          {:ok, result} <- Lynx.Adapter.read(adapter, uri, options) do
@@ -21,6 +25,10 @@ defmodule Lynx do
   end
 
   @spec read!(uri, keyword, [Lynx.Adapter.t()]) :: Lynx.stream()
+  def read!(uri, options, adapters) when is_binary(uri) do
+    read!(URI.parse(uri), options, adapters)
+  end
+
   def read!(uri, options, adapters) do
     case read(uri, options, adapters) do
       {:ok, stream} -> stream
@@ -29,6 +37,10 @@ defmodule Lynx do
   end
 
   @spec write(uri, stream, keyword, [Lynx.Adapter.t()]) :: :ok | {:error, {module, keyword}}
+  def write(uri, stream, options, adapters) when is_binary(uri) do
+    write(URI.parse(uri), stream, options, adapters)
+  end
+
   def write(uri, stream, options, adapters) do
     with {:ok, adapter} <- fetch_adapter(uri, adapters) do
       Lynx.Adapter.write(adapter, uri, stream, options)
@@ -36,6 +48,10 @@ defmodule Lynx do
   end
 
   @spec write!(uri, stream, keyword, [Lynx.Adapter.t()]) :: :ok
+  def write!(uri, stream, options, adapters) when is_binary(uri) do
+    write!(URI.parse(uri), stream, options, adapters)
+  end
+
   def write!(uri, stream, options, adapters) do
     case write(uri, stream, options, adapters) do
       :ok -> :ok
@@ -66,13 +82,11 @@ defmodule Lynx do
     end
   end
 
-  @spec fetch_adapter(uri, [Lynx.Adapter.t()]) ::
+  @spec fetch_adapter(URI.t(), [Lynx.Adapter.t()]) ::
           {:ok, module} | {:error, {module, keyword}}
-  def fetch_adapter(uri, adapters) do
-    scheme = URI.parse(uri).scheme
-
+  def fetch_adapter(%URI{scheme: scheme} = uri, adapters) do
     case adapter_for_scheme(scheme, adapters) do
-      nil -> {:error, {Lynx.Adapter.NotFoundError, scheme: scheme, uri: uri}}
+      nil -> {:error, {Lynx.Adapter.NotFoundError, uri: uri}}
       adapter -> {:ok, adapter.module}
     end
   end

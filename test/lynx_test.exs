@@ -10,7 +10,17 @@ defmodule LynxTest do
 
   describe "read/2" do
     test "happy path" do
-      Hammox.expect(ConcreteAdapter, :read, fn "test://location", [] ->
+      Hammox.expect(ConcreteAdapter, :read, fn %URI{
+                                                 authority: "location",
+                                                 fragment: nil,
+                                                 host: "location",
+                                                 path: nil,
+                                                 port: nil,
+                                                 query: nil,
+                                                 scheme: "test",
+                                                 userinfo: nil
+                                               },
+                                               [] ->
         {:ok, []}
       end)
 
@@ -18,14 +28,27 @@ defmodule LynxTest do
     end
 
     test "inexistent adapter" do
-      assert {:error, {Lynx.Adapter.NotFoundError, [scheme: "dummy", uri: "dummy://location"]}} ==
+      assert {:error,
+              {Lynx.Adapter.NotFoundError,
+               [
+                 uri: %URI{
+                   authority: "location",
+                   fragment: nil,
+                   host: "location",
+                   path: nil,
+                   port: nil,
+                   query: nil,
+                   scheme: "dummy",
+                   userinfo: nil
+                 }
+               ]}} ==
                Lynx.read("dummy://location", [], @adapters)
     end
   end
 
   describe "read!/2" do
     test "happy path" do
-      Hammox.expect(ConcreteAdapter, :read, fn "test://location", [] ->
+      Hammox.expect(ConcreteAdapter, :read, fn %URI{}, [] ->
         {:ok, []}
       end)
 
@@ -41,7 +64,7 @@ defmodule LynxTest do
 
   describe "write/4" do
     test "happy path" do
-      Hammox.expect(ConcreteAdapter, :write, fn "test://location", _, _ ->
+      Hammox.expect(ConcreteAdapter, :write, fn %URI{}, _, _ ->
         :ok
       end)
 
@@ -51,14 +74,36 @@ defmodule LynxTest do
     test "inexistent adapter" do
       uri = "dummy://location"
 
-      assert {:error, {Lynx.Adapter.NotFoundError, scheme: "dummy", uri: "dummy://location"}} ==
+      assert {:error,
+              {Lynx.Adapter.NotFoundError,
+               uri: %URI{
+                 authority: "location",
+                 fragment: nil,
+                 host: "location",
+                 path: nil,
+                 port: nil,
+                 query: nil,
+                 scheme: "dummy",
+                 userinfo: nil
+               }}} ==
                Lynx.write(uri, [], [], @adapters)
     end
   end
 
   describe "write!/4" do
     test "happy path" do
-      Hammox.expect(ConcreteAdapter, :write, fn "test://location_1", [], [] ->
+      Hammox.expect(ConcreteAdapter, :write, fn %URI{
+                                                  authority: "location_1",
+                                                  fragment: nil,
+                                                  host: "location_1",
+                                                  path: nil,
+                                                  port: nil,
+                                                  query: nil,
+                                                  scheme: "test",
+                                                  userinfo: nil
+                                                },
+                                                [],
+                                                [] ->
         :ok
       end)
 
@@ -66,7 +111,7 @@ defmodule LynxTest do
     end
 
     test "unhappy path" do
-      Hammox.expect(ConcreteAdapter, :write, fn "test://location_1", _, _ ->
+      Hammox.expect(ConcreteAdapter, :write, fn %URI{}, _, _ ->
         {:error, {RuntimeError, message: "broken connection"}}
       end)
 
@@ -107,15 +152,15 @@ defmodule LynxTest do
     end
 
     test "read/2" do
-      assert MyLynx.read("test://location", []) == {:ok, []}
+      assert MyLynx.read(URI.parse("test://location"), []) == {:ok, []}
     end
 
     test "write/3" do
-      assert MyLynx.write("test://location_1", [], []) == :ok
+      assert MyLynx.write(URI.parse("test://location_1"), [], []) == :ok
     end
 
     test "delete/3" do
-      assert MyLynx.delete("test://location_1", []) == :ok
+      assert MyLynx.delete(URI.parse("test://location_1"), []) == :ok
     end
   end
 end
