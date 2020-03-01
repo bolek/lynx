@@ -1,11 +1,12 @@
-defmodule VFS.AdapterTest do
+defmodule Lynx.AdapterTest do
   use ExUnit.Case, async: true
 
   defmodule MyTestAdapter do
-    use VFS.Adapter, "test"
+    use Lynx.Adapter, "test"
 
     def read(_, _options \\ []), do: {:ok, []}
     def write(_, _, _options \\ []), do: :ok
+    def delete(_, _options), do: :ok
   end
 
   describe "using" do
@@ -15,22 +16,26 @@ defmodule VFS.AdapterTest do
   end
 
   test "read/3" do
-    assert VFS.Adapter.read(MyTestAdapter, "test://location") == {:ok, []}
+    assert Lynx.Adapter.read(MyTestAdapter, "test://location") == {:ok, []}
   end
 
   test "write/3" do
-    assert VFS.Adapter.write(MyTestAdapter, "test://to_location", []) == :ok
+    assert Lynx.Adapter.write(MyTestAdapter, "test://to_location", []) == :ok
+  end
+
+  test "delete/1" do
+    assert Lynx.Adapter.delete(MyTestAdapter, "test://location", []) == :ok
   end
 
   test "build_entry/2" do
-    assert VFS.Adapter.build_entry("test", MyTestAdapter) == %VFS.Adapter.Registry.Entry{
+    assert Lynx.Adapter.build_entry("test", MyTestAdapter) == %Lynx.Adapter.Registry.Entry{
              scheme: "test",
              module: MyTestAdapter
            }
   end
 
   setup_all do
-    Hammox.protect(ConcreteAdapter, VFS.Adapter, read: 2, write: 3)
+    Hammox.protect(ConcreteAdapter, Lynx.Adapter, read: 2, write: 3)
   end
 
   describe "behaviour" do

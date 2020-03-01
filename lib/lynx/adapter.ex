@@ -1,8 +1,9 @@
-defmodule VFS.Adapter do
+defmodule Lynx.Adapter do
   alias __MODULE__
 
-  @callback read(VFS.uri(), keyword) :: {:ok, VFS.stream()} | {:error, {module, keyword}}
-  @callback write(VFS.uri(), VFS.stream(), keyword) :: :ok | {:error, {module, keyword}}
+  @callback read(Lynx.uri(), keyword) :: {:ok, Lynx.stream()} | {:error, {module, keyword}}
+  @callback write(Lynx.uri(), Lynx.stream(), keyword) :: :ok | {:error, {module, keyword}}
+  @callback delete(Lynx.uri(), keyword) :: :ok | {:error, {module, keyword}}
 
   defmacro __using__(scheme) do
     module = __CALLER__.module
@@ -10,7 +11,7 @@ defmodule VFS.Adapter do
     quote location: :keep do
       @scheme unquote(scheme)
 
-      @behaviour VFS.Adapter
+      @behaviour Lynx.Adapter
 
       def scheme(), do: @scheme
 
@@ -22,10 +23,13 @@ defmodule VFS.Adapter do
     end
   end
 
-  @spec read(module, VFS.uri(), keyword) :: {:ok, VFS.stream()}
+  @spec delete(module, Lynx.uri(), keyword) :: :ok | {:error, {module, keyword}}
+  def delete(adapter, uri, options \\ []), do: adapter.delete(uri, options)
+
+  @spec read(module, Lynx.uri(), keyword) :: {:ok, Lynx.stream()}
   def read(adapter, uri, options \\ []), do: adapter.read(uri, options)
 
-  @spec write(module, VFS.uri(), VFS.stream(), keyword) :: :ok | {:error, {module, keyword}}
+  @spec write(module, Lynx.uri(), Lynx.stream(), keyword) :: :ok | {:error, {module, keyword}}
   def write(adapter, uri, stream, options \\ []), do: adapter.write(uri, stream, options)
 
   defdelegate build_entry(scheme, module), to: Adapter.Registry.Entry, as: :new

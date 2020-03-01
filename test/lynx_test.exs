@@ -1,12 +1,12 @@
-defmodule VFSTest do
+defmodule LynxTest do
   use ExUnit.Case
-  doctest VFS
+  doctest Lynx
 
   setup_all do
-    Hammox.protect(ConcreteAdapter, VFS.Adapter, read: 2, write: 3)
+    Hammox.protect(ConcreteAdapter, Lynx.Adapter, read: 2, write: 3)
   end
 
-  @adapters [VFS.Adapter.build_entry("test", ConcreteAdapter)]
+  @adapters [Lynx.Adapter.build_entry("test", ConcreteAdapter)]
 
   describe "read/2" do
     test "happy path" do
@@ -14,12 +14,12 @@ defmodule VFSTest do
         {:ok, []}
       end)
 
-      assert {:ok, []} = VFS.read("test://location", [], @adapters)
+      assert {:ok, []} = Lynx.read("test://location", [], @adapters)
     end
 
     test "inexistent adapter" do
-      assert {:error, {VFS.Adapter.NotFoundError, [scheme: "dummy", uri: "dummy://location"]}} ==
-               VFS.read("dummy://location", [], @adapters)
+      assert {:error, {Lynx.Adapter.NotFoundError, [scheme: "dummy", uri: "dummy://location"]}} ==
+               Lynx.read("dummy://location", [], @adapters)
     end
   end
 
@@ -29,12 +29,12 @@ defmodule VFSTest do
         {:ok, []}
       end)
 
-      assert [] = VFS.read!("test://location", [], @adapters)
+      assert [] = Lynx.read!("test://location", [], @adapters)
     end
 
     test "inexistent adapter" do
-      assert_raise VFS.Adapter.NotFoundError, fn ->
-        VFS.write!("dummy://lala", [], [], @adapters)
+      assert_raise Lynx.Adapter.NotFoundError, fn ->
+        Lynx.write!("dummy://lala", [], [], @adapters)
       end
     end
   end
@@ -45,14 +45,14 @@ defmodule VFSTest do
         :ok
       end)
 
-      assert VFS.write("test://location", [], [], @adapters) == :ok
+      assert Lynx.write("test://location", [], [], @adapters) == :ok
     end
 
     test "inexistent adapter" do
       uri = "dummy://location"
 
-      assert {:error, {VFS.Adapter.NotFoundError, scheme: "dummy", uri: "dummy://location"}} ==
-               VFS.write(uri, [], [], @adapters)
+      assert {:error, {Lynx.Adapter.NotFoundError, scheme: "dummy", uri: "dummy://location"}} ==
+               Lynx.write(uri, [], [], @adapters)
     end
   end
 
@@ -62,7 +62,7 @@ defmodule VFSTest do
         :ok
       end)
 
-      assert VFS.write!("test://location_1", [], [], @adapters) == :ok
+      assert Lynx.write!("test://location_1", [], [], @adapters) == :ok
     end
 
     test "unhappy path" do
@@ -71,46 +71,51 @@ defmodule VFSTest do
       end)
 
       assert_raise RuntimeError, "broken connection", fn ->
-        VFS.write!("test://location_1", [], [], @adapters)
+        Lynx.write!("test://location_1", [], [], @adapters)
       end
     end
 
     test "inexistent adapter for uri" do
       uri = "dummy://location"
 
-      assert_raise VFS.Adapter.NotFoundError,
+      assert_raise Lynx.Adapter.NotFoundError,
                    fn ->
-                     VFS.write!(uri, [], [], @adapters)
+                     Lynx.write!(uri, [], [], @adapters)
                    end
     end
   end
 
   describe "using" do
     defmodule DummyAdapter do
-      use VFS.Adapter, :test
+      use Lynx.Adapter, :test
 
       def read(_, _), do: {:ok, []}
       def write(_, _, _), do: :ok
+      def delete(_, _), do: :ok
     end
 
-    defmodule MyVFS do
-      use VFS, :test
+    defmodule MyLynx do
+      use Lynx, :test
 
       adapter(DummyAdapter)
     end
 
     test "adapters/0" do
-      assert MyVFS.adapters() == [
-               %VFS.Adapter.Registry.Entry{module: DummyAdapter, scheme: "test"}
+      assert MyLynx.adapters() == [
+               %Lynx.Adapter.Registry.Entry{module: DummyAdapter, scheme: "test"}
              ]
     end
 
     test "read/2" do
-      assert MyVFS.read("test://location", []) == {:ok, []}
+      assert MyLynx.read("test://location", []) == {:ok, []}
     end
 
     test "write/3" do
-      assert MyVFS.write("test://location_1", [], []) == :ok
+      assert MyLynx.write("test://location_1", [], []) == :ok
+    end
+
+    test "delete/3" do
+      assert MyLynx.delete("test://location_1", []) == :ok
     end
   end
 end

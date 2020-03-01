@@ -1,13 +1,13 @@
 # Thank you - https://gist.github.com/christhekeele/fc4e058ee7d117016b9b041b83c6546a
 
-defmodule VFS.Adapter.Registry do
+defmodule Lynx.Adapter.Registry do
   defmodule Entry do
     @enforce_keys [:scheme, :module]
     defstruct [:scheme, :module]
 
-    @type t :: %__MODULE__{scheme: VFS.scheme(), module: module}
+    @type t :: %__MODULE__{scheme: Lynx.scheme(), module: module}
 
-    @spec new(Vfs.scheme(), module) :: t()
+    @spec new(Lynx.scheme(), module) :: t()
     def new(scheme, module) do
       %__MODULE__{scheme: "#{scheme}", module: module}
     end

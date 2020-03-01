@@ -1,4 +1,4 @@
-defmodule VFS.Adapter.NotFoundError do
+defmodule Lynx.Adapter.NotFoundError do
   defexception [:scheme, :uri]
 
   @impl true

@@ -1,3 +1,3 @@
-Hammox.defmock(ConcreteAdapter, for: VFS.Adapter)
+Hammox.defmock(ConcreteAdapter, for: Lynx.Adapter)
 
 ExUnit.start()
