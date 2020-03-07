@@ -3,24 +3,16 @@ defmodule LynxTest do
   doctest Lynx
 
   setup_all do
-    Hammox.protect(ConcreteAdapter, Lynx.Adapter, read: 2, write: 3)
+    Hammox.protect(ConcreteAdapter, Lynx.Adapter, read: 2, write: 3, init_object: 1)
   end
 
   @adapters [Lynx.Adapter.build_entry("test", ConcreteAdapter)]
 
   describe "read/2" do
     test "happy path" do
-      Hammox.expect(ConcreteAdapter, :read, fn %URI{
-                                                 authority: "location",
-                                                 fragment: nil,
-                                                 host: "location",
-                                                 path: nil,
-                                                 port: nil,
-                                                 query: nil,
-                                                 scheme: "test",
-                                                 userinfo: nil
-                                               },
-                                               [] ->
+      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
+
+      Hammox.expect(ConcreteAdapter, :read, fn %Lynx.Object{}, [] ->
         {:ok, []}
       end)
 
@@ -48,7 +40,9 @@ defmodule LynxTest do
 
   describe "read!/2" do
     test "happy path" do
-      Hammox.expect(ConcreteAdapter, :read, fn %URI{}, [] ->
+      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
+
+      Hammox.expect(ConcreteAdapter, :read, fn %Lynx.Object{}, [] ->
         {:ok, []}
       end)
 
@@ -64,7 +58,9 @@ defmodule LynxTest do
 
   describe "write/4" do
     test "happy path" do
-      Hammox.expect(ConcreteAdapter, :write, fn %URI{}, _, _ ->
+      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
+
+      Hammox.expect(ConcreteAdapter, :write, fn %Lynx.Object{}, _, _ ->
         :ok
       end)
 
@@ -92,18 +88,9 @@ defmodule LynxTest do
 
   describe "write!/4" do
     test "happy path" do
-      Hammox.expect(ConcreteAdapter, :write, fn %URI{
-                                                  authority: "location_1",
-                                                  fragment: nil,
-                                                  host: "location_1",
-                                                  path: nil,
-                                                  port: nil,
-                                                  query: nil,
-                                                  scheme: "test",
-                                                  userinfo: nil
-                                                },
-                                                [],
-                                                [] ->
+      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
+
+      Hammox.expect(ConcreteAdapter, :write, fn %Lynx.Object{}, [], [] ->
         :ok
       end)
 
@@ -111,7 +98,9 @@ defmodule LynxTest do
     end
 
     test "unhappy path" do
-      Hammox.expect(ConcreteAdapter, :write, fn %URI{}, _, _ ->
+      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
+
+      Hammox.expect(ConcreteAdapter, :write, fn %Lynx.Object{}, _, _ ->
         {:error, {RuntimeError, message: "broken connection"}}
       end)
 
@@ -137,6 +126,7 @@ defmodule LynxTest do
       def read(_, _), do: {:ok, []}
       def write(_, _, _), do: :ok
       def delete(_, _), do: :ok
+      def init_object(object), do: {:ok, Lynx.Object.put_extra(object, %{a: :b})}
     end
 
     defmodule MyLynx do

@@ -1,9 +1,10 @@
 defmodule Lynx.Adapter do
   alias __MODULE__
 
-  @callback read(Lynx.uri(), keyword) :: {:ok, Lynx.stream()} | {:error, {module, keyword}}
-  @callback write(Lynx.uri(), Lynx.stream(), keyword) :: :ok | {:error, {module, keyword}}
-  @callback delete(Lynx.uri(), keyword) :: :ok | {:error, {module, keyword}}
+  @callback read(Lynx.Object.t(), keyword) :: {:ok, Lynx.stream()} | {:error, Lynx.exception()}
+  @callback write(Lynx.Object.t(), Lynx.stream(), keyword) :: :ok | {:error, Lynx.exception()}
+  @callback delete(Lynx.Object.t(), keyword) :: :ok | {:error, Lynx.exception()}
+  @callback init_object(Lynx.Object.t()) :: {:ok, Lynx.Object.t()} | {:error, Lynx.exception()}
 
   defmacro __using__(scheme) do
     module = __CALLER__.module
@@ -20,17 +21,29 @@ defmodule Lynx.Adapter do
           use Adapter.Registry, Adapter.build_entry(scheme, module)
         end
       end
+
+      def to_object(uri), do: Lynx.Object.new(uri, unquote(module))
+      def to_object!(uri), do: Lynx.Object.new!(uri, unquote(module))
     end
   end
 
-  @spec delete(module, Lynx.uri(), keyword) :: :ok | {:error, {module, keyword}}
-  def delete(adapter, uri, options \\ []), do: adapter.delete(uri, options)
+  @spec delete(Lynx.Object.t(), keyword) :: :ok | {:error, Lynx.exception()}
+  def delete(%Lynx.Object{adapter: adapter} = object, options \\ []),
+    do: adapter.delete(object, options)
 
-  @spec read(module, Lynx.uri(), keyword) :: {:ok, Lynx.stream()}
-  def read(adapter, uri, options \\ []), do: adapter.read(uri, options)
+  @spec read(Lynx.Object.t(), keyword) ::
+          {:ok, Lynx.stream()} | {:error, Lynx.exception()}
+  def read(%Lynx.Object{adapter: adapter} = object, options \\ []),
+    do: adapter.read(object, options)
 
-  @spec write(module, Lynx.uri(), Lynx.stream(), keyword) :: :ok | {:error, {module, keyword}}
-  def write(adapter, uri, stream, options \\ []), do: adapter.write(uri, stream, options)
+  @spec write(Lynx.Object.t(), Lynx.stream(), keyword) ::
+          :ok | {:error, Lynx.exception()}
+  def write(%Lynx.Object{adapter: adapter} = object, stream, options \\ []),
+    do: adapter.write(object, stream, options)
+
+  @spec init_object(Lynx.Object.t()) :: {:ok, Lynx.Object.t()} | {:error, Lynx.exception()}
+  def init_object(%Lynx.Object{adapter: adapter} = object),
+    do: adapter.init_object(object)
 
   defdelegate build_entry(scheme, module), to: Adapter.Registry.Entry, as: :new
 end

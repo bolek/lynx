@@ -1,12 +1,12 @@
 defmodule Lynx.Exceptions.ObjectNotFound do
   alias __MODULE__
-  defexception [:uri]
+  defexception [:object]
 
-  def exception(uri) do
-    %ObjectNotFound{uri: uri}
+  def exception(object: object) do
+    %ObjectNotFound{object: object}
   end
 
-  def message(%{uri: uri}) do
+  def message(%{object: %{uri: uri}}) do
     "not found: \"#{uri}\""
   end
 end

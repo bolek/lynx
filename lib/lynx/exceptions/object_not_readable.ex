@@ -1,20 +1,20 @@
 defmodule Lynx.Exceptions.ObjectNotReadable do
   alias __MODULE__
-  defexception [:uri, :details]
+  defexception [:object, :details]
 
-  def exception(uri: uri, details: details) do
-    %ObjectNotReadable{uri: uri, details: details}
+  def exception(object: object, details: details) do
+    %ObjectNotReadable{object: object, details: details}
   end
 
-  def exception(uri: uri) do
-    %ObjectNotReadable{uri: uri}
+  def exception(object: object) do
+    %ObjectNotReadable{object: object}
   end
 
-  def message(%{uri: uri, details: nil}) do
+  def message(%{object: %{uri: uri}, details: nil}) do
     "cannot read from: \"#{uri}\""
   end
 
-  def message(%{uri: uri, details: details}) do
+  def message(%{object: %{uri: uri}, details: details}) do
     """
     cannot read from: \"#{uri}\"
     #{details}

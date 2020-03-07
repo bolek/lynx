@@ -5,7 +5,7 @@ defmodule Lynx do
 
   @type stream :: Enumerable.t() | File.Stream.t() | IO.Stream.t()
   @type scheme :: binary | atom
-  @type uri :: String.t() | URI.t()
+  @type uri :: String.t() | URI.t() | Lynx.Object.t()
 
   @type exception_attributes :: keyword
   @type exception :: {module, exception_attributes}
@@ -14,19 +14,45 @@ defmodule Lynx do
     quote do: use(unquote(module))
   end
 
-  @spec read(uri, keyword, [Lynx.Adapter.t()]) ::
-          {:ok, Lynx.stream()} | {:error, exception}
-  def read(uri, options, adapter) when is_binary(uri) do
-    read(URI.parse(uri), options, adapter)
+  @spec to_object(binary | URI.t(), [Lynx.Adapter.t()]) :: {:ok, Lynx.Object.t()} | {:error, any}
+  def to_object(uri, adapters) when is_binary(uri) do
+    to_object(URI.parse(uri), adapters)
   end
 
-  def read(uri, options, adapters) do
-    with {:ok, adapter} <- fetch_adapter(uri, adapters),
-         {:ok, result} <- Lynx.Adapter.read(adapter, uri, options) do
-      {:ok, result}
+  def to_object(uri, adapters) do
+    with {:ok, adapter} <- fetch_adapter(uri, adapters) do
+      Lynx.Object.new(uri, adapter)
     end
   end
 
+  @spec to_object!(binary | URI.t(), [any]) :: Lynx.Object.t()
+  def to_object!(uri, adapters) do
+    case to_object(uri, adapters) do
+      {:ok, object} -> object
+      {:error, {module, args}} -> raise module, args
+    end
+  end
+
+  @spec read(Lynx.Object.t(), keyword) :: {:ok, Lynx.Stream.t()} | {:error, exception}
+  def read(%Lynx.Object{} = object, options) do
+    Lynx.Adapter.read(object, options)
+  end
+
+  @spec read(uri, keyword, [Lynx.Adapter.t()]) ::
+          {:ok, Lynx.stream()} | {:error, exception}
+  def read(uri, options, adapters)
+
+  def read(%Lynx.Object{} = object, options, _adapters) do
+    read(object, options)
+  end
+
+  def read(uri, options, adapter) do
+    with {:ok, object} <- to_object(uri, adapter) do
+      read(object, options)
+    end
+  end
+
+  @spec read!(uri, keyword, [Lynx.Adapter.t()]) :: Lynx.Stream.t()
   def read!(uri, options, adapters) do
     case read(uri, options, adapters) do
       {:ok, stream} -> stream
@@ -34,17 +60,25 @@ defmodule Lynx do
     end
   end
 
+  @spec write(Lynx.Object.t(), stream, keyword) :: :ok | {:error, exception}
+  def write(%Lynx.Object{} = object, stream, options) do
+    Lynx.Adapter.write(object, stream, options)
+  end
+
   @spec write(uri, stream, keyword, [Lynx.Adapter.t()]) :: :ok | {:error, exception}
-  def write(uri, stream, options, adapters) when is_binary(uri) do
-    write(URI.parse(uri), stream, options, adapters)
+  def write(uri, stream, options, adapters)
+
+  def write(%Lynx.Object{} = object, stream, options, _adapters) do
+    write(object, stream, options)
   end
 
   def write(uri, stream, options, adapters) do
-    with {:ok, adapter} <- fetch_adapter(uri, adapters) do
-      Lynx.Adapter.write(adapter, uri, stream, options)
+    with {:ok, object} <- to_object(uri, adapters) do
+      write(object, stream, options)
     end
   end
 
+  @spec write!(uri, stream, keyword, [Lynx.Adapter.t()]) :: :ok | {:error, exception}
   def write!(uri, stream, options, adapters) do
     case write(uri, stream, options, adapters) do
       :ok -> :ok
@@ -62,14 +96,21 @@ defmodule Lynx do
     write!(uri, stream, options, adapters)
   end
 
+  @spec delete(Lynx.Object.t(), keyword) :: :ok | {:error, exception}
+  def delete(%Lynx.Object{} = object, options) do
+    Lynx.Adapter.delete(object, options)
+  end
+
   @spec delete(uri, keyword, [Lynx.Adapter.t()]) :: :ok | {:error, exception}
-  def delete(uri, options, adapters) when is_binary(uri) do
-    delete(URI.parse(uri), options, adapters)
+  def delete(uri, options, adapters)
+
+  def delete(%Lynx.Object{} = object, options, _adapters) do
+    delete(object, options)
   end
 
   def delete(uri, options, adapters) do
-    with {:ok, adapter} <- fetch_adapter(uri, adapters) do
-      Lynx.Adapter.delete(adapter, uri, options)
+    with {:ok, object} <- to_object(uri, adapters) do
+      delete(object, options)
     end
   end
 
