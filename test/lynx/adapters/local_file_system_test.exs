@@ -93,6 +93,8 @@ defmodule Lynx.Adapters.LocalFileSystemTest do
 
       LocalFileSystem.write(object, ["tmp"])
 
+      object = LocalFileSystem.to_object!("file://" <> file_path)
+
       assert LocalFileSystem.delete(object) == :ok
       refute File.exists?(file_path)
     end

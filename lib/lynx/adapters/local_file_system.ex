@@ -92,8 +92,22 @@ defmodule Lynx.Adapters.LocalFileSystem do
           :ok
         end
 
+      !exists?(object) ->
+        :ok
+
       true ->
-        object |> path() |> File.rm()
+        case object |> path() |> File.rm() do
+          :ok ->
+            :ok
+
+          {:error, :enoent} ->
+            :ok
+
+          {:error, :eacces} ->
+            {:error,
+             {Lynx.Exceptions.InsufficientPermissions,
+              [object: object, details: "missing permission for the file or one of its parents"]}}
+        end
     end
   end
 
