@@ -73,6 +73,7 @@ defmodule Lynx do
     end
   end
 
+  @spec delete!(uri, keyword, [Lynx.Adapter.t()]) :: :ok
   def delete!(uri, options, adapters) do
     case delete(uri, options, adapters) do
       :ok -> :ok
