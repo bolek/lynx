@@ -1,5 +1,7 @@
 # Lynx
 
+## [![Build Status](https://github.com/bolek/lynx/workflows/CI/badge.svg)](https://github.com/bolek/lynx/actions)
+
 **TODO: Add description**
 
 ## Installation

@@ -1,11 +1,13 @@
 defmodule Lynx.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+
   def project do
     [
       app: :lynx,
-      version: "0.1.0",
-      elixir: "~> 1.10",
+      version: @version,
+      elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
