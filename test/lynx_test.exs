@@ -19,6 +19,16 @@ defmodule LynxTest do
       assert {:ok, []} = Lynx.read("test://location", [], @adapters)
     end
 
+    test "using specific adapter" do
+      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
+
+      Hammox.expect(ConcreteAdapter, :read, fn %Lynx.Object{}, [] ->
+        {:ok, []}
+      end)
+
+      assert {:ok, []} = Lynx.read("test://location", [], ConcreteAdapter)
+    end
+
     test "inexistent adapter" do
       assert {:error,
               {Lynx.Adapter.NotFoundError,
@@ -49,6 +59,16 @@ defmodule LynxTest do
       assert [] = Lynx.read!("test://location", [], @adapters)
     end
 
+    test "using specific adapter" do
+      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
+
+      Hammox.expect(ConcreteAdapter, :read, fn %Lynx.Object{}, [] ->
+        {:ok, []}
+      end)
+
+      assert [] = Lynx.read!("test://location", [], ConcreteAdapter)
+    end
+
     test "inexistent adapter" do
       assert_raise Lynx.Adapter.NotFoundError, fn ->
         Lynx.write!("dummy://lala", [], [], @adapters)
@@ -65,6 +85,16 @@ defmodule LynxTest do
       end)
 
       assert Lynx.write("test://location", [], [], @adapters) == :ok
+    end
+
+    test "using specific adapter" do
+      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
+
+      Hammox.expect(ConcreteAdapter, :write, fn %Lynx.Object{}, _, _ ->
+        :ok
+      end)
+
+      assert Lynx.write("test://location", [], [], ConcreteAdapter) == :ok
     end
 
     test "inexistent adapter" do
@@ -95,6 +125,16 @@ defmodule LynxTest do
       end)
 
       assert Lynx.write!("test://location_1", [], [], @adapters) == :ok
+    end
+
+    test "using specific adapter" do
+      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
+
+      Hammox.expect(ConcreteAdapter, :write, fn %Lynx.Object{}, [], [] ->
+        :ok
+      end)
+
+      assert Lynx.write!("test://location_1", [], [], ConcreteAdapter) == :ok
     end
 
     test "unhappy path" do

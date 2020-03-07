@@ -22,8 +22,8 @@ defmodule Lynx.Adapter do
         end
       end
 
-      def to_object(uri), do: Lynx.Object.new(uri, unquote(module))
-      def to_object!(uri), do: Lynx.Object.new!(uri, unquote(module))
+      def to_object(uri), do: Lynx.to_object(uri, unquote(module))
+      def to_object!(uri), do: Lynx.to_object!(uri, unquote(module))
     end
   end
 

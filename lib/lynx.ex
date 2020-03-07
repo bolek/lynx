@@ -5,7 +5,7 @@ defmodule Lynx do
 
   @type stream :: Enumerable.t() | File.Stream.t() | IO.Stream.t()
   @type scheme :: binary | atom
-  @type uri :: String.t() | URI.t() | Lynx.Object.t()
+  @type uri :: String.t() | URI.t()
 
   @type exception_attributes :: keyword
   @type exception :: {module, exception_attributes}
@@ -14,18 +14,23 @@ defmodule Lynx do
     quote do: use(unquote(module))
   end
 
-  @spec to_object(binary | URI.t(), [Lynx.Adapter.t()]) :: {:ok, Lynx.Object.t()} | {:error, any}
+  @spec to_object(uri, [Lynx.Adapter.t()] | Lynx.Adapter.t()) ::
+          {:ok, Lynx.Object.t()} | {:error, any}
   def to_object(uri, adapters) when is_binary(uri) do
     to_object(URI.parse(uri), adapters)
   end
 
-  def to_object(uri, adapters) do
+  def to_object(uri, adapters) when is_list(adapters) do
     with {:ok, adapter} <- fetch_adapter(uri, adapters) do
-      Lynx.Object.new(uri, adapter)
+      to_object(uri, adapter)
     end
   end
 
-  @spec to_object!(binary | URI.t(), [any]) :: Lynx.Object.t()
+  def to_object(uri, adapter) do
+    Lynx.Object.new(uri, adapter)
+  end
+
+  @spec to_object!(uri, [Lynx.Adapter.t()] | Lynx.Adapter.t()) :: Lynx.Object.t()
   def to_object!(uri, adapters) do
     case to_object(uri, adapters) do
       {:ok, object} -> object
@@ -42,12 +47,8 @@ defmodule Lynx do
           {:ok, Lynx.stream()} | {:error, exception}
   def read(uri, options, adapters)
 
-  def read(%Lynx.Object{} = object, options, _adapters) do
-    read(object, options)
-  end
-
-  def read(uri, options, adapter) do
-    with {:ok, object} <- to_object(uri, adapter) do
+  def read(uri, options, adapters) do
+    with {:ok, object} <- to_object(uri, adapters) do
       read(object, options)
     end
   end
