@@ -43,7 +43,7 @@ defmodule Lynx do
     Lynx.Adapter.read(object, options)
   end
 
-  @spec read(uri, keyword, [Lynx.Adapter.t()]) ::
+  @spec read(uri, keyword, [Lynx.Adapter.t()] | Lynx.Adapter.t()) ::
           {:ok, Lynx.stream()} | {:error, exception}
   def read(uri, options, adapters)
 
@@ -53,7 +53,7 @@ defmodule Lynx do
     end
   end
 
-  @spec read!(uri, keyword, [Lynx.Adapter.t()]) :: Lynx.Stream.t()
+  @spec read!(uri, keyword, [Lynx.Adapter.t()] | Lynx.Adapter.t()) :: Lynx.Stream.t()
   def read!(uri, options, adapters) do
     case read(uri, options, adapters) do
       {:ok, stream} -> stream
@@ -66,7 +66,8 @@ defmodule Lynx do
     Lynx.Adapter.write(object, stream, options)
   end
 
-  @spec write(uri, stream, keyword, [Lynx.Adapter.t()]) :: :ok | {:error, exception}
+  @spec write(uri, stream, keyword, [Lynx.Adapter.t()] | Lynx.Adapter.t()) ::
+          :ok | {:error, exception}
   def write(uri, stream, options, adapters)
 
   def write(%Lynx.Object{} = object, stream, options, _adapters) do
@@ -79,7 +80,8 @@ defmodule Lynx do
     end
   end
 
-  @spec write!(uri, stream, keyword, [Lynx.Adapter.t()]) :: :ok | {:error, exception}
+  @spec write!(uri, stream, keyword, [Lynx.Adapter.t()] | Lynx.Adapter.t()) ::
+          :ok | {:error, exception}
   def write!(uri, stream, options, adapters) do
     case write(uri, stream, options, adapters) do
       :ok -> :ok
@@ -87,12 +89,13 @@ defmodule Lynx do
     end
   end
 
-  @spec write_to(stream, uri, keyword, [Lynx.Adapter.t()]) :: :ok | {:error, exception}
+  @spec write_to(stream, uri, keyword, [Lynx.Adapter.t()] | Lynx.Adapter.t()) ::
+          :ok | {:error, exception}
   def write_to(stream, uri, options, adapters) do
     write(uri, stream, options, adapters)
   end
 
-  @spec write_to!(stream, uri, keyword, [Lynx.Adapter.t()]) :: :ok
+  @spec write_to!(stream, uri, keyword, [Lynx.Adapter.t()] | Lynx.Adapter.t()) :: :ok
   def write_to!(stream, uri, options, adapters) do
     write!(uri, stream, options, adapters)
   end
@@ -102,7 +105,7 @@ defmodule Lynx do
     Lynx.Adapter.delete(object, options)
   end
 
-  @spec delete(uri, keyword, [Lynx.Adapter.t()]) :: :ok | {:error, exception}
+  @spec delete(uri, keyword, [Lynx.Adapter.t()] | Lynx.Adapter.t()) :: :ok | {:error, exception}
   def delete(uri, options, adapters)
 
   def delete(%Lynx.Object{} = object, options, _adapters) do
@@ -115,7 +118,7 @@ defmodule Lynx do
     end
   end
 
-  @spec delete!(uri, keyword, [Lynx.Adapter.t()]) :: :ok
+  @spec delete!(uri, keyword, [Lynx.Adapter.t()] | Lynx.Adapter.t()) :: :ok
   def delete!(uri, options, adapters) do
     case delete(uri, options, adapters) do
       :ok -> :ok
@@ -123,7 +126,7 @@ defmodule Lynx do
     end
   end
 
-  @spec fetch_adapter(URI.t(), [Lynx.Adapter.t()]) ::
+  @spec fetch_adapter(URI.t(), [Lynx.Adapter.t() | Lynx.Adapter.t()]) ::
           {:ok, module} | {:error, exception}
   def fetch_adapter(%URI{scheme: scheme} = uri, adapters) do
     case adapter_for_scheme(scheme, adapters) do

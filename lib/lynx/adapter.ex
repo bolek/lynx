@@ -1,9 +1,16 @@
 defmodule Lynx.Adapter do
   alias __MODULE__
 
-  @callback read(Lynx.Object.t(), keyword) :: {:ok, Lynx.stream()} | {:error, Lynx.exception()}
-  @callback write(Lynx.Object.t(), Lynx.stream(), keyword) :: :ok | {:error, Lynx.exception()}
-  @callback delete(Lynx.Object.t(), keyword) :: :ok | {:error, Lynx.exception()}
+  @callback read(Lynx.uri() | Lynx.Object.t(), keyword) ::
+              {:ok, Lynx.stream()} | {:error, Lynx.exception()}
+  @callback handle_read(Lynx.Object.t(), keyword) ::
+              {:ok, Lynx.stream()} | {:error, Lynx.exception()}
+  @callback write(Lynx.uri() | Lynx.Object.t(), Lynx.stream(), keyword) ::
+              :ok | {:error, Lynx.exception()}
+  @callback handle_write(Lynx.Object.t(), Lynx.stream(), keyword) ::
+              :ok | {:error, Lynx.exception()}
+  @callback delete(Lynx.uri() | Lynx.Object.t(), keyword) :: :ok | {:error, Lynx.exception()}
+  @callback handle_delete(Lynx.Object.t(), keyword) :: :ok | {:error, Lynx.exception()}
   @callback init_object(Lynx.Object.t()) :: {:ok, Lynx.Object.t()} | {:error, Lynx.exception()}
 
   defmacro __using__(scheme) do
@@ -21,6 +28,21 @@ defmodule Lynx.Adapter do
           use Adapter.Registry, Adapter.build_entry(scheme, module)
         end
       end
+
+      def delete(object_or_uri, options \\ [])
+      def delete(%Lynx.Object{} = object, options), do: handle_delete(object, options)
+      def delete(uri, options), do: Lynx.delete(uri, options, unquote(module))
+
+      def read(object_or_uri, options \\ [])
+      def read(%Lynx.Object{} = object, options), do: handle_read(object, options)
+      def read(uri, options), do: Lynx.read(uri, options, unquote(module))
+
+      def write(object_or_uri, stream, options \\ [])
+
+      def write(%Lynx.Object{} = object, stream, options),
+        do: handle_write(object, stream, options)
+
+      def write(uri, stream, options), do: Lynx.write(uri, stream, options, unquote(module))
 
       def to_object(uri), do: Lynx.to_object(uri, unquote(module))
       def to_object!(uri), do: Lynx.to_object!(uri, unquote(module))

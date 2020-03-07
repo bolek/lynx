@@ -27,7 +27,7 @@ defmodule Lynx.Adapters.LocalFileSystem do
           | {:error,
              {Lynx.Exceptions.ObjectNotFound, keyword}
              | {Lynx.Exceptions.ObjectNotReadable, keyword}}
-  def read(%Lynx.Object{} = object, options \\ []) do
+  def handle_read(%Lynx.Object{} = object, options) do
     cond do
       !exists?(object) ->
         {:error, {Lynx.Exceptions.ObjectNotFound, [object: object]}}
@@ -43,13 +43,14 @@ defmodule Lynx.Adapters.LocalFileSystem do
   end
 
   @impl true
-  @spec write(Lynx.Object.t(Extra.t()), Lynx.stream(), keyword) ::
+  @spec handle_write(Lynx.Object.t(Extra.t()), Lynx.stream(), keyword) ::
           :ok
           | {:error,
              {File.Error, keyword}
              | {Lynx.Exceptions.MalformedURI, keyword}
              | {Lynx.Exceptions.ObjectNotWriteable, keyword}}
-  def write(%Lynx.Object{} = object, stream, _options \\ []) do
+
+  def handle_write(%Lynx.Object{} = object, stream, _options) do
     cond do
       is_dir?(object) ->
         {:error,
@@ -85,11 +86,24 @@ defmodule Lynx.Adapters.LocalFileSystem do
   end
 
   @impl true
-  def delete(%Lynx.Object{} = object, _options \\ []) do
+  def handle_delete(%Lynx.Object{} = object, _options) do
     cond do
       is_dir?(object) ->
-        with {:ok, _} <- object |> path() |> File.rm_rf() do
-          :ok
+        case object |> path() |> File.rm_rf() do
+          {:ok, _} ->
+            :ok
+
+          {:error, :enoent, _} ->
+            :ok
+
+          {:error, :eacces, _} ->
+            {:error,
+             {Lynx.Exceptions.InsufficientPermissions,
+              [object: object, details: "missing permission for the file or one of its parents"]}}
+
+          {:error, reason, _} ->
+            {:error, File.Error,
+             reason: reason, action: "remove file", path: IO.chardata_to_string(path(object))}
         end
 
       !exists?(object) ->
@@ -107,6 +121,10 @@ defmodule Lynx.Adapters.LocalFileSystem do
             {:error,
              {Lynx.Exceptions.InsufficientPermissions,
               [object: object, details: "missing permission for the file or one of its parents"]}}
+
+          {:error, reason} ->
+            {:error, File.Error,
+             reason: reason, action: "remove file", path: IO.chardata_to_string(path(object))}
         end
     end
   end

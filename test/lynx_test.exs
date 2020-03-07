@@ -163,9 +163,9 @@ defmodule LynxTest do
     defmodule DummyAdapter do
       use Lynx.Adapter, :test
 
-      def read(_, _), do: {:ok, []}
-      def write(_, _, _), do: :ok
-      def delete(_, _), do: :ok
+      def handle_read(_, _), do: {:ok, []}
+      def handle_write(_, _, _), do: :ok
+      def handle_delete(_, _), do: :ok
       def init_object(object), do: {:ok, Lynx.Object.put_extra(object, %{a: :b})}
     end
 

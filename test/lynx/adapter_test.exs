@@ -4,9 +4,9 @@ defmodule Lynx.AdapterTest do
   defmodule MyTestAdapter do
     use Lynx.Adapter, "test"
 
-    def read(_, _options \\ []), do: {:ok, []}
-    def write(_, _, _options \\ []), do: :ok
-    def delete(_, _options), do: :ok
+    def handle_read(_, _options \\ []), do: {:ok, []}
+    def handle_write(_, _, _options \\ []), do: :ok
+    def handle_delete(_, _options), do: :ok
     def init_object(object), do: {:ok, object}
   end
 
