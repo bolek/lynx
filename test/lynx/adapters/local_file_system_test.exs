@@ -6,9 +6,8 @@ defmodule Lynx.Adapters.LocalFileSystemTest do
   describe "read/2" do
     test "reading an existing file" do
       file_path = Path.expand("./test/data/a.txt")
-      object = LocalFileSystem.to_object!("file://" <> file_path)
 
-      assert LocalFileSystem.read(object) ==
+      assert LocalFileSystem.read(file_path) ==
                {:ok,
                 %File.Stream{
                   line_or_bytes: :line,
@@ -20,17 +19,19 @@ defmodule Lynx.Adapters.LocalFileSystemTest do
 
     test "reading an inexistent file" do
       file_path = Path.expand("./test/data/boooom.txt")
-      object = LocalFileSystem.to_object!("file://" <> file_path)
+      uri = "file:" <> file_path
+      object = LocalFileSystem.to_object!(uri)
 
-      assert LocalFileSystem.read(object) ==
+      assert LocalFileSystem.read(uri) ==
                {:error, {Lynx.Exceptions.ObjectNotFound, [object: object]}}
     end
 
     test "reading a directory" do
       file_path = Path.expand("./test/data")
-      object = LocalFileSystem.to_object!("file://" <> file_path)
+      uri = "file:" <> file_path
+      object = LocalFileSystem.to_object!(uri)
 
-      assert LocalFileSystem.read(object) ==
+      assert LocalFileSystem.read(uri) ==
                {:error,
                 {Lynx.Exceptions.ObjectNotReadable,
                  [object: object, details: "expected to read a data file, received a directory"]}}
@@ -40,28 +41,26 @@ defmodule Lynx.Adapters.LocalFileSystemTest do
   describe "write/2" do
     test "write to inexiestent file" do
       file_path = Path.expand("./test/tmp/foo/bar.txt")
-      object = LocalFileSystem.to_object!("file://" <> file_path)
 
-      assert LocalFileSystem.write(object, ["foobar"]) == :ok
+      assert LocalFileSystem.write(file_path, ["foobar"]) == :ok
       assert File.read!(file_path) == "foobar"
-
-      File.rm(file_path)
+    after
+      File.rm(Path.expand("./test/tmp/foo/bar.txt"))
     end
 
     test "write to an existing file - overwrite" do
       file_path = Path.expand("./test/tmp/foo/bar.txt")
-      object = LocalFileSystem.to_object!("file://" <> file_path)
 
-      assert LocalFileSystem.write(object, ["foobar"]) == :ok
-      assert LocalFileSystem.write(object, ["another foobar"]) == :ok
+      assert LocalFileSystem.write(file_path, ["foobar"]) == :ok
+      assert LocalFileSystem.write(file_path, ["another foobar"]) == :ok
       assert File.read!(file_path) == "another foobar"
-
-      File.rm(file_path)
+    after
+      File.rm(Path.expand("./test/tmp/foo/bar.txt"))
     end
 
     test "write to directory" do
       file_path = Path.expand("./test")
-      object = LocalFileSystem.to_object!("file://" <> file_path)
+      object = LocalFileSystem.to_object!("file:" <> file_path)
 
       assert LocalFileSystem.write(object, ["foobar"]) ==
                {:error,
@@ -89,24 +88,20 @@ defmodule Lynx.Adapters.LocalFileSystemTest do
   describe "delete/2" do
     test "delete an existing file" do
       file_path = Path.expand("./test/tmp/tmp4356.txt")
-      object = LocalFileSystem.to_object!("file://" <> file_path)
 
-      LocalFileSystem.write(object, ["tmp"])
+      LocalFileSystem.write(file_path, ["tmp"])
 
-      object = LocalFileSystem.to_object!("file://" <> file_path)
-
-      assert LocalFileSystem.delete(object) == :ok
+      assert LocalFileSystem.delete(file_path) == :ok
       refute File.exists?(file_path)
     end
 
     test "delete a directory" do
       dir_path = Path.expand("./test/tmp/foo_for_deletion")
       File.mkdir_p!(dir_path)
-      object = LocalFileSystem.to_object!("file://" <> dir_path)
 
-      assert LocalFileSystem.delete(object) == :ok
-
-      File.rmdir(dir_path)
+      assert LocalFileSystem.delete(dir_path) == :ok
+    after
+      File.rmdir(Path.expand("./test/tmp/foo_for_deletion"))
     end
   end
 end
