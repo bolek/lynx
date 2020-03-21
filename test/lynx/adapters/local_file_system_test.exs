@@ -10,7 +10,7 @@ defmodule Lynx.Adapters.LocalFileSystemTest do
       assert LocalFileSystem.read(file_path) ==
                {:ok,
                 %File.Stream{
-                  line_or_bytes: :line,
+                  line_or_bytes: :bytes,
                   modes: [:raw, :read_ahead, :binary],
                   path: file_path,
                   raw: true
@@ -20,7 +20,7 @@ defmodule Lynx.Adapters.LocalFileSystemTest do
     test "reading an inexistent file" do
       file_path = Path.expand("./test/data/boooom.txt")
       uri = "file:" <> file_path
-      object = LocalFileSystem.to_object!(uri)
+      object = LocalFileSystem.new!(uri)
 
       assert LocalFileSystem.read(uri) ==
                {:error, {Lynx.Exceptions.ObjectNotFound, [object: object]}}
@@ -29,7 +29,7 @@ defmodule Lynx.Adapters.LocalFileSystemTest do
     test "reading a directory" do
       file_path = Path.expand("./test/data")
       uri = "file:" <> file_path
-      object = LocalFileSystem.to_object!(uri)
+      object = LocalFileSystem.new!(uri)
 
       assert LocalFileSystem.read(uri) ==
                {:error,
@@ -60,7 +60,7 @@ defmodule Lynx.Adapters.LocalFileSystemTest do
 
     test "write to directory" do
       file_path = Path.expand("./test")
-      object = LocalFileSystem.to_object!("file:" <> file_path)
+      object = LocalFileSystem.new!("file:" <> file_path)
 
       assert LocalFileSystem.write(object, ["foobar"]) ==
                {:error,
@@ -70,7 +70,7 @@ defmodule Lynx.Adapters.LocalFileSystemTest do
 
     test "write to an invalid path" do
       file_path = Path.expand("./test/data/a.txt/b.txt")
-      object = LocalFileSystem.to_object!("file://" <> file_path)
+      object = LocalFileSystem.new!("file://" <> file_path)
 
       assert LocalFileSystem.write(object, ["foobar"]) ==
                {:error,

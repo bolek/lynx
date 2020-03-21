@@ -2,31 +2,34 @@ defmodule LynxTest do
   use ExUnit.Case
   doctest Lynx
 
-  setup_all do
-    Hammox.protect(ConcreteAdapter, Lynx.Adapter, read: 2, write: 3, init_object: 1)
+  defmodule DummyAdapter do
+    use Lynx.Adapter, scheme: :test
+
+    defstruct [:uri]
+    def new("bad"), do: {:error, {Lynx.Exceptions.MalformedURI, uri: "bad"}}
+    def new(uri), do: {:ok, %__MODULE__{uri: URI.parse(uri)}}
+
+    def handle_read(_, _), do: {:ok, []}
+    def handle_write(_, _, _), do: :ok
+    def handle_delete(_, _), do: :ok
   end
 
-  @adapters [Lynx.Adapter.build_entry("test", ConcreteAdapter)]
+  @adapters [Lynx.Adapter.build_entry("test", DummyAdapter)]
 
   describe "read/2" do
     test "happy path" do
-      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
+      object = DummyAdapter.new!("test://location")
+      assert {:ok, []} = Lynx.read(object, [])
+    end
+  end
 
-      Hammox.expect(ConcreteAdapter, :read, fn %Lynx.Object{}, [] ->
-        {:ok, []}
-      end)
-
+  describe "read/3" do
+    test "happy path" do
       assert {:ok, []} = Lynx.read("test://location", [], @adapters)
     end
 
     test "using specific adapter" do
-      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
-
-      Hammox.expect(ConcreteAdapter, :read, fn %Lynx.Object{}, [] ->
-        {:ok, []}
-      end)
-
-      assert {:ok, []} = Lynx.read("test://location", [], ConcreteAdapter)
+      assert {:ok, []} = Lynx.read("test://location", [], DummyAdapter)
     end
 
     test "inexistent adapter" do
@@ -48,25 +51,13 @@ defmodule LynxTest do
     end
   end
 
-  describe "read!/2" do
+  describe "read!/3" do
     test "happy path" do
-      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
-
-      Hammox.expect(ConcreteAdapter, :read, fn %Lynx.Object{}, [] ->
-        {:ok, []}
-      end)
-
       assert [] = Lynx.read!("test://location", [], @adapters)
     end
 
     test "using specific adapter" do
-      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
-
-      Hammox.expect(ConcreteAdapter, :read, fn %Lynx.Object{}, [] ->
-        {:ok, []}
-      end)
-
-      assert [] = Lynx.read!("test://location", [], ConcreteAdapter)
+      assert [] = Lynx.read!("test://location", [], DummyAdapter)
     end
 
     test "inexistent adapter" do
@@ -78,23 +69,11 @@ defmodule LynxTest do
 
   describe "write/4" do
     test "happy path" do
-      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
-
-      Hammox.expect(ConcreteAdapter, :write, fn %Lynx.Object{}, _, _ ->
-        :ok
-      end)
-
       assert Lynx.write("test://location", [], [], @adapters) == :ok
     end
 
     test "using specific adapter" do
-      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
-
-      Hammox.expect(ConcreteAdapter, :write, fn %Lynx.Object{}, _, _ ->
-        :ok
-      end)
-
-      assert Lynx.write("test://location", [], [], ConcreteAdapter) == :ok
+      assert Lynx.write("test://location", [], [], DummyAdapter) == :ok
     end
 
     test "inexistent adapter" do
@@ -118,35 +97,11 @@ defmodule LynxTest do
 
   describe "write!/4" do
     test "happy path" do
-      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
-
-      Hammox.expect(ConcreteAdapter, :write, fn %Lynx.Object{}, [], [] ->
-        :ok
-      end)
-
       assert Lynx.write!("test://location_1", [], [], @adapters) == :ok
     end
 
     test "using specific adapter" do
-      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
-
-      Hammox.expect(ConcreteAdapter, :write, fn %Lynx.Object{}, [], [] ->
-        :ok
-      end)
-
-      assert Lynx.write!("test://location_1", [], [], ConcreteAdapter) == :ok
-    end
-
-    test "unhappy path" do
-      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
-
-      Hammox.expect(ConcreteAdapter, :write, fn %Lynx.Object{}, _, _ ->
-        {:error, {RuntimeError, message: "broken connection"}}
-      end)
-
-      assert_raise RuntimeError, "broken connection", fn ->
-        Lynx.write!("test://location_1", [], [], @adapters)
-      end
+      assert Lynx.write!("test://location_1", [], [], DummyAdapter) == :ok
     end
 
     test "inexistent adapter for uri" do
@@ -160,15 +115,6 @@ defmodule LynxTest do
   end
 
   describe "using" do
-    defmodule DummyAdapter do
-      use Lynx.Adapter, :test
-
-      def handle_read(_, _), do: {:ok, []}
-      def handle_write(_, _, _), do: :ok
-      def handle_delete(_, _), do: :ok
-      def init_object(object), do: {:ok, Lynx.Object.put_extra(object, %{a: :b})}
-    end
-
     defmodule MyLynx do
       use Lynx, :test
 
@@ -182,15 +128,15 @@ defmodule LynxTest do
     end
 
     test "read/2" do
-      assert MyLynx.read(URI.parse("test://location"), []) == {:ok, []}
+      assert MyLynx.read("test://location", []) == {:ok, []}
     end
 
     test "write/3" do
-      assert MyLynx.write(URI.parse("test://location_1"), [], []) == :ok
+      assert MyLynx.write("test://location_1", [], []) == :ok
     end
 
     test "delete/3" do
-      assert MyLynx.delete(URI.parse("test://location_1"), []) == :ok
+      assert MyLynx.delete("test://location_1", []) == :ok
     end
   end
 end

@@ -1,52 +1,31 @@
 defmodule Lynx.AdapterTest do
   use ExUnit.Case, async: true
 
-  defmodule MyTestAdapter do
-    use Lynx.Adapter, "test"
-
-    def handle_read(_, _options \\ []), do: {:ok, []}
-    def handle_write(_, _, _options \\ []), do: :ok
-    def handle_delete(_, _options), do: :ok
-    def init_object(object), do: {:ok, object}
-  end
-
   describe "using" do
     test "scheme/0" do
       assert MyTestAdapter.scheme() == "test"
     end
 
-    test "to_object/1" do
-      assert MyTestAdapter.to_object("test://location") ==
-               {:ok,
-                %Lynx.Object{
-                  adapter: MyTestAdapter,
-                  extra: %{},
-                  uri: URI.parse("test://location")
-                }}
-    end
-
-    test "to_object!/1" do
-      assert MyTestAdapter.to_object!("test://location") ==
-               %Lynx.Object{
-                 adapter: MyTestAdapter,
-                 extra: %{},
+    test "new!/1" do
+      assert MyTestAdapter.new!("test://location") ==
+               %MyTestAdapter{
                  uri: URI.parse("test://location")
                }
     end
   end
 
   test "read/2" do
-    object = Lynx.Object.new!(URI.parse("test://location"), MyTestAdapter)
+    object = MyTestAdapter.new!("test://location")
     assert Lynx.Adapter.read(object, []) == {:ok, []}
   end
 
   test "write/3" do
-    object = Lynx.Object.new!(URI.parse("test://location"), MyTestAdapter)
+    object = MyTestAdapter.new!("test://location")
     assert Lynx.Adapter.write(object, [], []) == :ok
   end
 
   test "delete/2" do
-    object = Lynx.Object.new!(URI.parse("test://location"), MyTestAdapter)
+    object = MyTestAdapter.new!("test://location")
     assert Lynx.Adapter.delete(object, []) == :ok
   end
 
@@ -58,30 +37,34 @@ defmodule Lynx.AdapterTest do
   end
 
   setup_all do
-    Hammox.protect(ConcreteAdapter, Lynx.Adapter, read: 2, write: 3, delete: 2, init_object: 1)
+    Hammox.protect(ConcreteAdapter, Lynx.Adapter,
+      handle_read: 2,
+      handle_write: 3,
+      handle_delete: 2
+    )
   end
 
   describe "behaviour" do
-    test "read/2", %{read_2: read_2} do
-      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
+    test "read/2", %{handle_read_2: read_2} do
+      Hammox.expect(ConcreteAdapter, :new, fn object -> {:ok, object} end)
 
-      Hammox.expect(ConcreteAdapter, :read, fn %Lynx.Object{uri: %URI{}}, [] ->
+      Hammox.expect(ConcreteAdapter, :handle_read, fn "scheme://location", [] ->
         {:ok, []}
       end)
 
-      object = Lynx.Object.new!(URI.parse("scheme://location"), ConcreteAdapter)
+      {:ok, object} = ConcreteAdapter.new("scheme://location")
 
       assert {:ok, []} == read_2.(object, [])
     end
 
-    test "write/3", %{write_3: write_3} do
-      Hammox.expect(ConcreteAdapter, :init_object, fn %Lynx.Object{} = object -> {:ok, object} end)
+    test "write/3", %{handle_write_3: write_3} do
+      Hammox.expect(ConcreteAdapter, :new, fn object -> {:ok, object} end)
 
-      Hammox.expect(ConcreteAdapter, :write, fn _, [], [] ->
+      Hammox.expect(ConcreteAdapter, :handle_write, fn _, [], [] ->
         :ok
       end)
 
-      object = Lynx.Object.new!(URI.parse("scheme://location_2"), ConcreteAdapter)
+      {:ok, object} = ConcreteAdapter.new("scheme://location_2")
 
       assert write_3.(object, [], []) == :ok
     end

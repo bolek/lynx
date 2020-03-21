@@ -1,33 +1,30 @@
 defmodule Lynx.Adapters.LocalFileSystem do
-  use Lynx.Adapter, :file
+  alias __MODULE__
+  use Lynx.Adapter, scheme: :file
 
-  defmodule Extra do
-    defstruct [:is_dir?, :exists?]
+  defstruct [:is_dir?, :exists?, :uri]
 
-    @type t :: %__MODULE__{is_dir?: boolean, exists?: boolean}
+  @type t :: %LocalFileSystem{is_dir?: boolean, exists?: boolean, uri: URI.t()}
 
-    @spec new(URI.t()) :: t
-    def new(%URI{path: path}) do
-      %__MODULE__{
-        is_dir?: File.dir?(path),
-        exists?: File.exists?(path)
-      }
-    end
+  @impl true
+  def new(uri) do
+    parsed_uri = URI.parse(uri)
+
+    {:ok,
+     %__MODULE__{
+       uri: parsed_uri,
+       is_dir?: File.dir?(parsed_uri.path),
+       exists?: File.exists?(parsed_uri.path)
+     }}
   end
 
   @impl true
-  @spec init_object(Lynx.Object.t()) :: {:ok, Lynx.Object.t()}
-  def init_object(%Lynx.Object{uri: uri} = object) do
-    {:ok, Lynx.Object.put_extra(object, Extra.new(uri))}
-  end
-
-  @impl true
-  @spec read(Lynx.Object.t(Extra.t()), keyword) ::
+  @spec handle_read(t, keyword) ::
           {:ok, File.Stream.t()}
           | {:error,
              {Lynx.Exceptions.ObjectNotFound, keyword}
              | {Lynx.Exceptions.ObjectNotReadable, keyword}}
-  def handle_read(%Lynx.Object{} = object, options) do
+  def handle_read(%LocalFileSystem{} = object, options) do
     cond do
       !exists?(object) ->
         {:error, {Lynx.Exceptions.ObjectNotFound, [object: object]}}
@@ -43,14 +40,13 @@ defmodule Lynx.Adapters.LocalFileSystem do
   end
 
   @impl true
-  @spec handle_write(Lynx.Object.t(Extra.t()), Lynx.stream(), keyword) ::
+  @spec handle_write(t(), Lynx.stream(), keyword) ::
           :ok
           | {:error,
              {File.Error, keyword}
              | {Lynx.Exceptions.MalformedURI, keyword}
              | {Lynx.Exceptions.ObjectNotWriteable, keyword}}
-
-  def handle_write(%Lynx.Object{} = object, stream, _options) do
+  def handle_write(%LocalFileSystem{} = object, stream, _options) do
     cond do
       is_dir?(object) ->
         {:error,
@@ -86,7 +82,7 @@ defmodule Lynx.Adapters.LocalFileSystem do
   end
 
   @impl true
-  def handle_delete(%Lynx.Object{} = object, _options) do
+  def handle_delete(%LocalFileSystem{} = object, _options) do
     cond do
       is_dir?(object) ->
         case object |> path() |> File.rm_rf() do
@@ -137,7 +133,7 @@ defmodule Lynx.Adapters.LocalFileSystem do
 
   defp stream!(object, options) do
     modes = Keyword.get(options, :modes, [])
-    line_or_bytes = Keyword.get(options, :stream_mode, :line)
+    line_or_bytes = Keyword.get(options, :stream_mode, :bytes)
 
     File.stream!(path(object), modes, line_or_bytes)
   end
@@ -145,7 +141,11 @@ defmodule Lynx.Adapters.LocalFileSystem do
   defp path(%{uri: %{path: path}}), do: path
   defp dir_path(object), do: object |> path() |> Path.dirname()
 
-  defp exists?(%{extra: %{exists?: exists}}), do: exists
+  defp exists?(%{exists?: exists}), do: exists
 
-  defp is_dir?(%{extra: %{is_dir?: is_dir}}), do: is_dir
+  defp is_dir?(%{is_dir?: is_dir}), do: is_dir
+end
+
+defimpl String.Chars, for: Lynx.Adapters.LocalFileSystem do
+  def to_string(%{uri: uri}), do: URI.to_string(uri)
 end
