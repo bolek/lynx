@@ -34,10 +34,10 @@ defmodule Lynx.Adapter do
   # @callback read(Lynx.uri() | Lynx.Object.t(), keyword) ::
   #             {:ok, Lynx.stream()} | {:error, Lynx.exception()}
   @callback handle_read(Lynx.Object.t(), keyword) ::
-              {:ok, Lynx.stream()} | {:error, Lynx.exception()}
+              {:ok, Enumerable.t()} | {:error, Lynx.exception()}
   # @callback write(Lynx.uri() | Lynx.Object.t(), Lynx.stream(), keyword) ::
   #             :ok | {:error, Lynx.exception()}
-  @callback handle_write(Lynx.Object.t(), Lynx.stream(), keyword) ::
+  @callback handle_write(Lynx.Object.t(), Enumerable.t(), keyword) ::
               :ok | {:error, Lynx.exception()}
   # @callback delete(Lynx.uri() | Lynx.Object.t(), keyword) :: :ok | {:error, Lynx.exception()}
   @callback handle_delete(Lynx.Object.t(), keyword) :: :ok | {:error, Lynx.exception()}
@@ -162,11 +162,14 @@ defmodule Lynx.Adapter do
   end
 
   @spec read(Lynx.Object.t(), keyword) ::
-          {:ok, Lynx.stream()} | {:error, Lynx.exception()}
-  def read(object, options \\ []) when is_struct(object),
-    do: object.__struct__.read(object, options)
+          {:ok, Enumerable.t()} | {:error, Lynx.exception()}
+  def read(object, options \\ []) when is_struct(object) do
+    {:ok, object.__struct__.stream!(object, options)}
 
-  @spec read!(Lynx.Object.t(), keyword) :: Lynx.stream()
+    object.__struct__.read(object, options)
+  end
+
+  @spec read!(Lynx.Object.t(), keyword) :: Enumerable.t()
   def read!(object, options \\ []) when is_struct(object) do
     case read(object, options) do
       {:ok, stream} -> stream
@@ -174,12 +177,12 @@ defmodule Lynx.Adapter do
     end
   end
 
-  @spec write(Lynx.Object.t(), Lynx.stream(), keyword) ::
+  @spec write(Lynx.Object.t(), Enumerable.t(), keyword) ::
           :ok | {:error, Lynx.exception()}
   def write(object, stream, options \\ []) when is_struct(object),
     do: object.__struct__.write(object, stream, options)
 
-  @spec write!(Lynx.Object.t(), Lynx.stream(), keyword) :: :ok
+  @spec write!(Lynx.Object.t(), Enumerable.t(), keyword) :: :ok
   def write!(object, stream, options \\ []) when is_struct(object) do
     case write(object, stream, options) do
       :ok -> :ok

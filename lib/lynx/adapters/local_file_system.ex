@@ -20,7 +20,7 @@ defmodule Lynx.Adapters.LocalFileSystem do
 
   @impl true
   @spec handle_read(t, keyword) ::
-          {:ok, File.Stream.t()}
+          {:ok, Enumerable.t()}
           | {:error,
              {Lynx.Exceptions.ObjectNotFound, keyword}
              | {Lynx.Exceptions.ObjectNotReadable, keyword}}
@@ -40,7 +40,7 @@ defmodule Lynx.Adapters.LocalFileSystem do
   end
 
   @impl true
-  @spec handle_write(t(), Lynx.stream(), keyword) ::
+  @spec handle_write(t(), Enumerable.t(), keyword) ::
           :ok
           | {:error,
              {File.Error, keyword}
@@ -129,13 +129,6 @@ defmodule Lynx.Adapters.LocalFileSystem do
     stream
     |> Stream.into(stream!(object, modes: [:write, :utf8]))
     |> Stream.run()
-  end
-
-  defp stream!(object, options) do
-    modes = Keyword.get(options, :modes, [])
-    line_or_bytes = Keyword.get(options, :stream_mode, :bytes)
-
-    File.stream!(path(object), modes, line_or_bytes)
   end
 
   defp path(%{uri: %{path: path}}), do: path

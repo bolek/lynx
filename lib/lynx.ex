@@ -3,7 +3,6 @@ defmodule Lynx do
   Documentation for `Lynx`.
   """
 
-  @type stream :: Enumerable.t() | File.Stream.t() | IO.Stream.t()
   @type scheme :: binary | atom
   @type uri :: String.t() | URI.t()
 
@@ -26,8 +25,8 @@ defmodule Lynx do
   defdelegate read(object, options), to: Lynx.Adapter
   defdelegate read!(object, options), to: Lynx.Adapter
 
-  defdelegate write(object, stream, options), to: Lynx.Adapter
-  defdelegate write!(object, stream, options), to: Lynx.Adapter
+  defdelegate write(object, enum, options), to: Lynx.Adapter
+  defdelegate write!(object, enum, options), to: Lynx.Adapter
 
   # @spec write_to(stream, uri, keyword, [Lynx.Adapter.t()] | Lynx.Adapter.t()) ::
   #         :ok | {:error, exception}
