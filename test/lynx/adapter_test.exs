@@ -14,16 +14,6 @@ defmodule Lynx.AdapterTest do
     end
   end
 
-  test "read/2" do
-    object = MyTestAdapter.new!("test://location")
-    assert Lynx.Adapter.read(object, []) == {:ok, []}
-  end
-
-  test "write/3" do
-    object = MyTestAdapter.new!("test://location")
-    assert Lynx.Adapter.write(object, [], []) == :ok
-  end
-
   test "delete/2" do
     object = MyTestAdapter.new!("test://location")
     assert Lynx.Adapter.delete(object, []) == :ok
@@ -36,37 +26,46 @@ defmodule Lynx.AdapterTest do
            }
   end
 
-  setup_all do
-    Hammox.protect(ConcreteAdapter, Lynx.Adapter,
-      handle_read: 2,
-      handle_write: 3,
-      handle_delete: 2
-    )
-  end
+  describe "from/2" do
+    test "object implements readable" do
+      object = MyTestAdapter.new!("test://location")
 
-  describe "behaviour" do
-    test "read/2", %{handle_read_2: read_2} do
-      Hammox.expect(ConcreteAdapter, :new, fn object -> {:ok, object} end)
-
-      Hammox.expect(ConcreteAdapter, :handle_read, fn "scheme://location", [] ->
-        {:ok, []}
-      end)
-
-      {:ok, object} = ConcreteAdapter.new("scheme://location")
-
-      assert {:ok, []} == read_2.(object, [])
+      assert Lynx.Adapter.from(object) == {:ok, []}
     end
 
-    test "write/3", %{handle_write_3: write_3} do
-      Hammox.expect(ConcreteAdapter, :new, fn object -> {:ok, object} end)
+    test "object does not implement readable" do
+      assert Lynx.Adapter.from(%{}) ==
+               {:error, {Lynx.Exceptions.ObjectNotReadable, [object: %{}]}}
+    end
+  end
 
-      Hammox.expect(ConcreteAdapter, :handle_write, fn _, [], [] ->
-        :ok
-      end)
+  describe "to/3" do
+    test "object implements writable" do
+      object = MyTestAdapter.new!("test://location")
+      {:ok, stream} = Lynx.Adapter.to(["a"], object)
+      assert Enumerable.impl_for(stream) != nil
+    end
 
-      {:ok, object} = ConcreteAdapter.new("scheme://location_2")
+    test "object does not implement writable" do
+      assert Lynx.Adapter.to(["a"], %{}) ==
+               {:error, {Lynx.Exceptions.ObjectNotWritable, [object: %{}]}}
+    end
 
-      assert write_3.(object, [], []) == :ok
+    test "success from tuple" do
+      object = MyTestAdapter.new!("test://location")
+      {:ok, stream} = Lynx.Adapter.to({:ok, ["a"]}, object)
+
+      assert Enumerable.impl_for(stream) != nil
+    end
+
+    test "error from tuple" do
+      object = MyTestAdapter.new!("test://location")
+
+      assert {:error, {Lynx.Exceptions.ObjectNotReadable, [object: %{}]}} =
+               Lynx.Adapter.to(
+                 {:error, {Lynx.Exceptions.ObjectNotReadable, [object: %{}]}},
+                 object
+               )
     end
   end
 end

@@ -3,12 +3,12 @@ defmodule Lynx.Adapters.LocalFileSystemTest do
 
   alias Lynx.Adapters.LocalFileSystem
 
-  describe "read/2" do
+  describe "implements Lynx.Adapter.Readable" do
     test "reading an existing file" do
       file_path = Path.expand("./test/data/a.txt")
       object = LocalFileSystem.new!(file_path)
 
-      assert LocalFileSystem.read(object) ==
+      assert Lynx.Adapter.Readable.from(object) ==
                {:ok,
                 %File.Stream{
                   line_or_bytes: :bytes,
@@ -23,7 +23,7 @@ defmodule Lynx.Adapters.LocalFileSystemTest do
       uri = "file:" <> file_path
       object = LocalFileSystem.new!(uri)
 
-      assert LocalFileSystem.read(object) ==
+      assert Lynx.Adapter.Readable.from(object) ==
                {:error, {Lynx.Exceptions.ObjectNotFound, [object: object]}}
     end
 
@@ -32,40 +32,43 @@ defmodule Lynx.Adapters.LocalFileSystemTest do
       uri = "file:" <> file_path
       object = LocalFileSystem.new!(uri)
 
-      assert LocalFileSystem.read(object) ==
+      assert Lynx.Adapter.Readable.from(object) ==
                {:error,
                 {Lynx.Exceptions.ObjectNotReadable,
                  [object: object, details: "expected to read a data file, received a directory"]}}
     end
   end
 
-  describe "write/2" do
-    test "write to inexiestent file" do
-      file_path = Path.expand("./test/tmp/foo/bar.txt")
+  describe "implements Lynx.Adapter.Writable" do
+    test "write to inexistent file" do
+      file_path = Path.expand("./test/data/foobar.txt")
       object = LocalFileSystem.new!(file_path)
 
-      assert LocalFileSystem.write(object, ["foobar"]) == :ok
-      assert File.read!(file_path) == "foobar"
-    after
-      File.rm(Path.expand("./test/tmp/foo/bar.txt"))
+      assert {:ok, stream} = Lynx.Adapter.Writable.to(object)
+      assert Collectable.impl_for(stream) != nil
     end
 
     test "write to an existing file - overwrite" do
-      file_path = Path.expand("./test/tmp/foo/bar.txt")
+      file_path = Path.expand("./test/data/a.txt")
       object = LocalFileSystem.new!(file_path)
 
-      assert LocalFileSystem.write(object, ["foobar"]) == :ok
-      assert LocalFileSystem.write(object, ["another foobar"]) == :ok
-      assert File.read!(file_path) == "another foobar"
-    after
-      File.rm(Path.expand("./test/tmp/foo/bar.txt"))
+      assert {:ok, stream} = Lynx.Adapter.Writable.to(object)
+      assert Collectable.impl_for(stream) != nil
+    end
+
+    test "write to an existing file with fail flag" do
+      file_path = Path.expand("./test/data/a.txt")
+      object = LocalFileSystem.new!(file_path)
+
+      assert Lynx.Adapter.Writable.to(object, file_exists: :fail) ==
+               {:error, {Lynx.Exceptions.ObjectExists, [object: object]}}
     end
 
     test "write to directory" do
-      file_path = Path.expand("./test")
-      object = LocalFileSystem.new!("file:" <> file_path)
+      file_path = Path.expand("./test/data")
+      object = LocalFileSystem.new!(file_path)
 
-      assert LocalFileSystem.write(object, ["foobar"]) ==
+      assert Lynx.Adapter.Writable.to(object) ==
                {:error,
                 {Lynx.Exceptions.ObjectNotWriteable,
                  [object: object, details: "cannot write to a directory"]}}
@@ -73,9 +76,9 @@ defmodule Lynx.Adapters.LocalFileSystemTest do
 
     test "write to an invalid path" do
       file_path = Path.expand("./test/data/a.txt/b.txt")
-      object = LocalFileSystem.new!("file://" <> file_path)
+      object = LocalFileSystem.new!(file_path)
 
-      assert LocalFileSystem.write(object, ["foobar"]) ==
+      assert Lynx.Adapter.Writable.to(object) ==
                {:error,
                 {Lynx.Exceptions.MalformedURI,
                  [
@@ -88,12 +91,14 @@ defmodule Lynx.Adapters.LocalFileSystemTest do
     end
   end
 
+  # describe "write/2" do
+
+  # end
+
   describe "delete/2" do
     test "delete an existing file" do
       file_path = Path.expand("./test/tmp/tmp4356.txt")
-      object = LocalFileSystem.new!(file_path)
-
-      LocalFileSystem.write(object, ["tmp"])
+      File.write(file_path, "tmp")
 
       object = LocalFileSystem.new!(file_path)
 

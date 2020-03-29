@@ -22,22 +22,8 @@ defmodule Lynx do
   defdelegate delete(object, options), to: Lynx.Adapter
   defdelegate delete!(object, options), to: Lynx.Adapter
 
-  defdelegate read(object, options), to: Lynx.Adapter
-  defdelegate read!(object, options), to: Lynx.Adapter
-
-  defdelegate write(object, enum, options), to: Lynx.Adapter
-  defdelegate write!(object, enum, options), to: Lynx.Adapter
-
-  # @spec write_to(stream, uri, keyword, [Lynx.Adapter.t()] | Lynx.Adapter.t()) ::
-  #         :ok | {:error, exception}
-  # def write_to(stream, uri, options, adapters) do
-  #   write(uri, stream, options, adapters)
-  # end
-
-  # @spec write_to!(stream, uri, keyword, [Lynx.Adapter.t()] | Lynx.Adapter.t()) :: :ok
-  # def write_to!(stream, uri, options, adapters) do
-  #   write!(uri, stream, options, adapters)
-  # end
+  defdelegate from(object, options), to: Lynx.Adapter
+  defdelegate to(from, to, options), to: Lynx.Adapter
 
   defmacro __using__(_env) do
     quote do

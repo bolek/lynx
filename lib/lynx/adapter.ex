@@ -9,18 +9,6 @@ defmodule Lynx.AdapterDefaults do
       def delete(object, options) when is_struct(object), do: handle_delete(object, options)
 
       # def delete(uri, options), do: Lynx.delete(uri, options, unquote(module))
-
-      def read(object_or_uri, options \\ [])
-      def read(object, options) when is_struct(object), do: handle_read(object, options)
-
-      # def read(uri, options), do: Lynx.read(uri, options, unquote(module))
-
-      def write(object_or_uri, stream, options \\ [])
-
-      def write(object, stream, options) when is_struct(object),
-        do: handle_write(object, stream, options)
-
-      # def write(uri, stream, options), do: Lynx.write(uri, stream, options, unquote(module))
     end
   end
 end
@@ -31,14 +19,7 @@ defmodule Lynx.Adapter do
   @type t :: module
 
   @callback new(Lynx.uri()) :: {:ok, Lynx.Object.t()} | {:error, Lynx.exception()}
-  # @callback read(Lynx.uri() | Lynx.Object.t(), keyword) ::
-  #             {:ok, Lynx.stream()} | {:error, Lynx.exception()}
-  @callback handle_read(Lynx.Object.t(), keyword) ::
-              {:ok, Enumerable.t()} | {:error, Lynx.exception()}
-  # @callback write(Lynx.uri() | Lynx.Object.t(), Lynx.stream(), keyword) ::
-  #             :ok | {:error, Lynx.exception()}
-  @callback handle_write(Lynx.Object.t(), Enumerable.t(), keyword) ::
-              :ok | {:error, Lynx.exception()}
+
   # @callback delete(Lynx.uri() | Lynx.Object.t(), keyword) :: :ok | {:error, Lynx.exception()}
   @callback handle_delete(Lynx.Object.t(), keyword) :: :ok | {:error, Lynx.exception()}
 
@@ -87,67 +68,27 @@ defmodule Lynx.Adapter do
     end
   end
 
-  # @spec delete(Lynx.uri(), keyword, [t] | t) :: :ok | {:error, Lynx.exception()}
-  # def delete(uri, options, adapters)
+  def from(object, options \\ []) do
+    if Adapter.Readable.impl_for(object) != nil do
+      Adapter.Readable.from(object, options)
+    else
+      {:error, {Lynx.Exceptions.ObjectNotReadable, [object: object]}}
+    end
+  end
 
-  # def delete(object, options, _adapters) when is_struct(object) do
-  #   delete(object, options)
-  # end
+  def to(from, object, options \\ [])
+  def to({:ok, from}, object, options), do: to(from, object, options)
+  def to({:error, _} = error, _, _), do: error
 
-  # def delete(uri, options, adapters) do
-  #   with {:ok, object} <- new(uri, adapters) do
-  #     delete(object, options)
-  #   end
-  # end
+  def to(from, object, options) do
+    if Adapter.Writable.impl_for(object) do
+      {:ok, Stream.into(from, Adapter.Writable.to(object, options))}
+    else
+      {:error, {Lynx.Exceptions.ObjectNotWritable, [object: object]}}
+    end
+  end
 
-  # @spec delete!(Lynx.uri(), keyword, [t] | t) :: :ok
-  # def delete!(uri, options, adapters) do
-  #   case delete(uri, options, adapters) do
-  #     :ok -> :ok
-  #     {:error, {module, args}} -> raise module, args
-  #   end
-  # end
-
-  # @spec read(Lynx.uri(), keyword, [t] | t) ::
-  #         {:ok, Lynx.stream()} | {:error, Lynx.exception()}
-  # def read(uri, options, adapters)
-
-  # def read(uri, options, adapters) do
-  #   with {:ok, object} <- new(uri, adapters) do
-  #     read(object, options)
-  #   end
-  # end
-
-  # @spec read!(Lynx.uri(), keyword, [t()] | t()) :: Lynx.Stream.t()
-  # def read!(uri, options, adapters) do
-  #   case read(uri, options, adapters) do
-  #     {:ok, stream} -> stream
-  #     {:error, {module, args}} -> raise module, args
-  #   end
-  # end
-
-  # @spec write(Lynx.uri(), Lynx.stream(), keyword, [t] | t) ::
-  #         :ok | {:error, Lynx.exception()}
-  # def write(uri, stream, options, adapters)
-
-  # def write(object, stream, options, _adapters) when is_struct(object) do
-  #   write(object, stream, options)
-  # end
-
-  # def write(uri, stream, options, adapters) do
-  #   with {:ok, object} <- new(uri, adapters) do
-  #     write(object, stream, options)
-  #   end
-  # end
-
-  # @spec write!(Lynx.uri(), Lynx.stream(), keyword, [t] | t) ::
-  #         :ok | {:error, Lynx.exception()}
-  # def write!(uri, stream, options, adapters) do
-  #   case write(uri, stream, options, adapters) do
-  #     :ok -> :ok
-  #     {:error, {module, args}} -> raise module, args
-  #   end
-  # end
+  def into(from, object, options), do: to(from, object, options)
 
   @spec delete(Lynx.Object.t(), keyword) :: :ok | {:error, Lynx.exception()}
   def delete(object, options \\ []) when is_struct(object),
@@ -156,35 +97,6 @@ defmodule Lynx.Adapter do
   @spec delete!(Lynx.Object.t(), keyword) :: :ok
   def delete!(object, options \\ []) when is_struct(object) do
     case delete(object, options) do
-      :ok -> :ok
-      {:error, {module, args}} -> raise module, args
-    end
-  end
-
-  @spec read(Lynx.Object.t(), keyword) ::
-          {:ok, Enumerable.t()} | {:error, Lynx.exception()}
-  def read(object, options \\ []) when is_struct(object) do
-    {:ok, object.__struct__.stream!(object, options)}
-
-    object.__struct__.read(object, options)
-  end
-
-  @spec read!(Lynx.Object.t(), keyword) :: Enumerable.t()
-  def read!(object, options \\ []) when is_struct(object) do
-    case read(object, options) do
-      {:ok, stream} -> stream
-      {:error, {module, args}} -> raise module, args
-    end
-  end
-
-  @spec write(Lynx.Object.t(), Enumerable.t(), keyword) ::
-          :ok | {:error, Lynx.exception()}
-  def write(object, stream, options \\ []) when is_struct(object),
-    do: object.__struct__.write(object, stream, options)
-
-  @spec write!(Lynx.Object.t(), Enumerable.t(), keyword) :: :ok
-  def write!(object, stream, options \\ []) when is_struct(object) do
-    case write(object, stream, options) do
       :ok -> :ok
       {:error, {module, args}} -> raise module, args
     end

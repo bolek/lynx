@@ -7,6 +7,7 @@ defmodule Lynx.Adapters.LocalFileSystem do
   @type t :: %LocalFileSystem{is_dir?: boolean, exists?: boolean, uri: URI.t()}
 
   @impl true
+  @spec new(binary | URI.t()) :: {:ok, Lynx.Adapters.LocalFileSystem.t()}
   def new(uri) do
     parsed_uri = URI.parse(uri)
 
@@ -18,67 +19,82 @@ defmodule Lynx.Adapters.LocalFileSystem do
      }}
   end
 
-  @impl true
-  @spec handle_read(t, keyword) ::
-          {:ok, Enumerable.t()}
-          | {:error,
-             {Lynx.Exceptions.ObjectNotFound, keyword}
-             | {Lynx.Exceptions.ObjectNotReadable, keyword}}
-  def handle_read(%LocalFileSystem{} = object, options) do
-    cond do
-      !exists?(object) ->
-        {:error, {Lynx.Exceptions.ObjectNotFound, [object: object]}}
+  defimpl Lynx.Adapter.Readable do
+    def from(%{is_dir?: false, exists?: true} = object, options),
+      do: {:ok, LocalFileSystem.stream!(object, options)}
 
-      is_dir?(object) ->
+    def from(%{is_dir?: true} = object, _),
+      do:
         {:error,
          {Lynx.Exceptions.ObjectNotReadable,
           [object: object, details: "expected to read a data file, received a directory"]}}
 
-      true ->
-        {:ok, stream!(object, options)}
-    end
+    def from(%{exists?: false} = object, _),
+      do: {:error, {Lynx.Exceptions.ObjectNotFound, [object: object]}}
   end
 
-  @impl true
-  @spec handle_write(t(), Enumerable.t(), keyword) ::
+  defimpl Lynx.Adapter.Writable do
+    def to(object, options \\ []) do
+      with :ok <- file_exists_check(object, options),
+           :ok <- file_is_not_directory(object),
+           :ok <- is_valid_path(object) do
+        {:ok, LocalFileSystem.stream!(object, options)}
+      end
+    end
+
+    defp file_exists_check(%{exists?: true} = object, options) do
+      case Keyword.get(options, :file_exists, :override) do
+        :override ->
           :ok
-          | {:error,
-             {File.Error, keyword}
-             | {Lynx.Exceptions.MalformedURI, keyword}
-             | {Lynx.Exceptions.ObjectNotWriteable, keyword}}
-  def handle_write(%LocalFileSystem{} = object, stream, _options) do
-    cond do
-      is_dir?(object) ->
+
+        :fail ->
+          {:error, {Lynx.Exceptions.ObjectExists, [object: object]}}
+      end
+    end
+
+    defp file_exists_check(_, _), do: :ok
+
+    defp file_is_not_directory(%{is_dir?: true} = object),
+      do:
         {:error,
          {Lynx.Exceptions.ObjectNotWriteable,
           [object: object, details: "cannot write to a directory"]}}
 
-      exists?(object) ->
-        write_from_stream(stream, object)
+    defp file_is_not_directory(_), do: :ok
 
-      true ->
-        with :ok <- File.mkdir_p(dir_path(object)) do
-          write_from_stream(stream, object)
-        else
-          {:error, :eexist} ->
-            {:error,
-             {Lynx.Exceptions.MalformedURI,
-              [
-                object: object,
-                details: """
-                the subpath might contain a data file rather than a directory
-                example: /a.txt/b.txt
-                """
-              ]}}
-
-          {:error, reason} ->
-            {:error,
-             {File.Error,
-              reason: reason,
-              action: "make directory (with -p)",
-              path: IO.chardata_to_string(path(object))}}
-        end
+    defp is_valid_path(object) do
+      if LocalFileSystem.path(object) |> Path.dirname() |> is_valid_subpath() do
+        :ok
+      else
+        {:error,
+         {Lynx.Exceptions.MalformedURI,
+          [
+            object: object,
+            details: """
+            the subpath might contain a data file rather than a directory
+            example: /a.txt/b.txt
+            """
+          ]}}
+      end
     end
+
+    defp is_valid_subpath("/"), do: true
+    defp is_valid_subpath("."), do: true
+
+    defp is_valid_subpath(subpath) do
+      if !File.exists?(subpath) || File.dir?(subpath) do
+        is_valid_subpath(Path.dirname(subpath))
+      else
+        false
+      end
+    end
+  end
+
+  def stream!(object, options) do
+    modes = Keyword.get(options, :modes, [])
+    line_or_bytes = Keyword.get(options, :stream_mode, :bytes)
+
+    File.stream!(path(object), modes, line_or_bytes)
   end
 
   @impl true
@@ -125,14 +141,7 @@ defmodule Lynx.Adapters.LocalFileSystem do
     end
   end
 
-  defp write_from_stream(stream, object) do
-    stream
-    |> Stream.into(stream!(object, modes: [:write, :utf8]))
-    |> Stream.run()
-  end
-
-  defp path(%{uri: %{path: path}}), do: path
-  defp dir_path(object), do: object |> path() |> Path.dirname()
+  def path(%{uri: %{path: path}}), do: path
 
   defp exists?(%{exists?: exists}), do: exists
 

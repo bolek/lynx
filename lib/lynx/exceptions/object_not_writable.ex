@@ -1,13 +1,13 @@
-defmodule Lynx.Exceptions.ObjectNotWriteable do
+defmodule Lynx.Exceptions.ObjectNotWritable do
   alias __MODULE__
   defexception [:object, :details]
 
   def exception(object: object, details: details) do
-    %ObjectNotWriteable{object: object, details: details}
+    %ObjectNotWritable{object: object, details: details}
   end
 
   def execption(object: object) do
-    %ObjectNotWriteable{object: object}
+    %ObjectNotWritable{object: object}
   end
 
   def message(%{object: %{uri: uri}, details: nil}) do

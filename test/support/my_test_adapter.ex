@@ -12,9 +12,21 @@ defmodule MyTestAdapter do
     {:ok, %__MODULE__{uri: URI.parse(uri)}}
   end
 
-  def handle_read(_, _options \\ []), do: {:ok, []}
-  def handle_write(_, _, _options \\ []), do: :ok
   def handle_delete(_, _options), do: :ok
+
+  defimpl Lynx.Adapter.Readable do
+    def from(object, error: "error"),
+      do: {:error, {Lynx.Exceptions.ObjectNotFound, [object: object]}}
+
+    def from(_, _), do: {:ok, []}
+  end
+
+  defimpl Lynx.Adapter.Writable do
+    def to(object, error: "error"),
+      do: {:error, {Lynx.Exceptions.ObjectNotFound, [object: object]}}
+
+    def to(_, _), do: {:ok, []}
+  end
 end
 
 defimpl String.Chars, for: MyTestAdapter do
