@@ -23,7 +23,14 @@ defmodule Lynx do
   defdelegate delete!(object, options), to: Lynx.Adapter
 
   defdelegate from(object, options), to: Lynx.Adapter
+  defdelegate from!(object, options), to: Lynx.Adapter
+
   defdelegate to(from, to, options), to: Lynx.Adapter
+  defdelegate to!(from, to, options), to: Lynx.Adapter
+
+  def run({:ok, stream}), do: run(stream)
+  def run({:error, _} = error), do: error
+  def run(stream), do: Stream.run(stream)
 
   defmacro __using__(_env) do
     quote do

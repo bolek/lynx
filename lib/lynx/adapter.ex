@@ -76,6 +76,13 @@ defmodule Lynx.Adapter do
     end
   end
 
+  def from!(object, options \\ []) do
+    case from(object, options) do
+      {:ok, object} -> object
+      {:error, {module, args}} -> raise module, args
+    end
+  end
+
   def to(from, object, options \\ [])
   def to({:ok, from}, object, options), do: to(from, object, options)
   def to({:error, _} = error, _, _), do: error
@@ -85,6 +92,13 @@ defmodule Lynx.Adapter do
       {:ok, Stream.into(from, Adapter.Writable.to(object, options))}
     else
       {:error, {Lynx.Exceptions.ObjectNotWritable, [object: object]}}
+    end
+  end
+
+  def to!(from, object, options \\ []) do
+    case to(from, object, options) do
+      {:ok, object} -> object
+      {:error, {module, args}} -> raise module, args
     end
   end
 
