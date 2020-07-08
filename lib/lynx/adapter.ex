@@ -69,7 +69,7 @@ defmodule Lynx.Adapter do
   end
 
   def from(object, options \\ []) do
-    if Adapter.Readable.impl_for(object) != nil do
+    if Adapter.Readable.impl_for(object) do
       Adapter.Readable.from(object, options)
     else
       {:error, {Lynx.Exceptions.ObjectNotReadable, [object: object]}}
@@ -89,7 +89,9 @@ defmodule Lynx.Adapter do
 
   def to(from, object, options) do
     if Adapter.Writable.impl_for(object) do
-      {:ok, Stream.into(from, Adapter.Writable.to(object, options))}
+      with {:ok, to_stream} <- Adapter.Writable.to(object, options) do
+        {:ok, Stream.into(from, to_stream)}
+      end
     else
       {:error, {Lynx.Exceptions.ObjectNotWritable, [object: object]}}
     end

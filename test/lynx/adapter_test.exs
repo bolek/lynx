@@ -26,6 +26,15 @@ defmodule Lynx.AdapterTest do
            }
   end
 
+  describe "run/1" do
+    test "happy path" do
+      assert MyTestAdapter.new!("test://location")
+             |> Lynx.Adapter.from()
+             |> Lynx.Adapter.to(MyTestAdapter.new!("test://location_2"))
+             |> Lynx.run() == :ok
+    end
+  end
+
   describe "from/2" do
     test "object implements readable" do
       object = MyTestAdapter.new!("test://location")
